@@ -1,0 +1,147 @@
+{
+ "name": "Envio de acesso ao aluno",
+ "nodes": [
+  {
+   "id": "a1",
+   "name": "Novo aluno (Webhook)",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    0,
+    200
+   ],
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "novo-aluno",
+    "options": {}
+   }
+  },
+  {
+   "id": "a2",
+   "name": "Tem e-mail?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 1,
+   "position": [
+    260,
+    100
+   ],
+   "parameters": {
+    "conditions": {
+     "string": [
+      {
+       "value1": "={{ $json.body.email }}",
+       "operation": "isNotEmpty"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "a3",
+   "name": "Tem WhatsApp?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 1,
+   "position": [
+    260,
+    320
+   ],
+   "parameters": {
+    "conditions": {
+     "string": [
+      {
+       "value1": "={{ $json.body.whatsapp }}",
+       "operation": "isNotEmpty"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "a4",
+   "name": "Enviar e-mail (Gmail)",
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1,
+   "position": [
+    520,
+    80
+   ],
+   "parameters": {
+    "sendTo": "={{ $json.body.email }}",
+    "subject": "={{ $json.body.assunto }}",
+    "emailType": "text",
+    "message": "={{ $json.body.mensagem }}",
+    "options": {}
+   }
+  },
+  {
+   "id": "a5",
+   "name": "Enviar WhatsApp (Evolution API)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    520,
+    340
+   ],
+   "parameters": {
+    "method": "POST",
+    "url": "https://SUA-EVOLUTION-API/message/sendText/SUA-INSTANCIA",
+    "sendHeaders": true,
+    "headerParameters": {
+     "parameters": [
+      {
+       "name": "apikey",
+       "value": "COLE_SUA_CHAVE_AQUI"
+      }
+     ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({ number: $json.body.whatsapp, text: $json.body.mensagem }) }}",
+    "options": {}
+   }
+  }
+ ],
+ "connections": {
+  "Novo aluno (Webhook)": {
+   "main": [
+    [
+     {
+      "node": "Tem e-mail?",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "Tem WhatsApp?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Tem e-mail?": {
+   "main": [
+    [
+     {
+      "node": "Enviar e-mail (Gmail)",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    []
+   ]
+  },
+  "Tem WhatsApp?": {
+   "main": [
+    [
+     {
+      "node": "Enviar WhatsApp (Evolution API)",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    []
+   ]
+  }
+ },
+ "settings": {}
+}

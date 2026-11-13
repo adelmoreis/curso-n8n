@@ -1,0 +1,238 @@
+{
+  "name": "Curso N8N - Pagamentos para o painel do gestor v1",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pagbank-curso",
+        "responseMode": "onReceived",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "c9b20720-4548-41de-884c-24e4cc0504e5",
+      "name": "PagBank avisa pagamento",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "8d7dd440-40d4-46ed-8594-2f89f3012da2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lê o aviso do PagBank. Só guarda quando o status é PAGO.\nconst b = $json.body || {};\nconst ch = (Array.isArray(b.charges) && b.charges[0]) || b;\nconst status = String(ch.status || b.status || '').toUpperCase();\nif (status !== 'PAID') return [];\nconst ref = String(b.reference_id || ch.reference_id || ch.id || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 60);\nif (!ref) return [];\nconst centavos = Number((ch.amount && (ch.amount.value ?? ch.amount.summary?.paid)) ?? (b.amount && b.amount.value) ?? 0);\nconst tipo = String((ch.payment_method && ch.payment_method.type) || '').toUpperCase();\nconst cli = b.customer || {};\nconst ph = (cli.phones && cli.phones[0]) || {};\nconst telefone = ((ph.area || '') + (ph.number || '')).replace(/\\D/g, '');\nconst m = ref.match(/^curso-(\\d+)-/);\nconst sd = $getWorkflowStaticData('global');\nsd.vendas = sd.vendas || {};\nconst jaTinha = !!sd.vendas[ref];\nsd.vendas[ref] = { ref, nome: cli.name || '', email: cli.email || '', telefone: telefone ? ('55' + telefone.replace(/^55/, '')) : '', forma: tipo === 'PIX' ? 'pix' : 'cartao', valor: centavos / 100, pagoEm: Date.now(), convId: m ? m[1] : '', src: 'pagbank' };\nconst ks = Object.keys(sd.vendas);\nif (ks.length > 300) ks.sort((a, b) => sd.vendas[a].pagoEm - sd.vendas[b].pagoEm).slice(0, ks.length - 300).forEach(k => delete sd.vendas[k]);\nif (jaTinha) return [];   // aviso repetido do banco: não avisa de novo\nreturn [{ json: sd.vendas[ref] }];"
+      },
+      "id": "406f5137-4c7e-4b47-8da7-0e78d9d036a1",
+      "name": "Ler pagamento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "2be3fcb3-784c-44c0-82cf-3e76f499fe12",
+              "leftValue": "={{ $json.convId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7e5cbfa2-c5e6-4f8b-bb88-53048d23f30b",
+      "name": "Veio de uma conversa?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot.agente3d.net/api/v1/accounts/1/conversations/{{ $json.convId }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "cnsoWqY9xnWS9NZbKF2avLWX"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: '💰 Pagamento confirmado: R$ ' + Number($json.valor).toFixed(2).replace('.', ',') + ' no ' + ($json.forma === 'pix' ? 'Pix' : 'cartão') + '. Libere o acesso no painel do gestor, aba Vendas.', message_type: 'outgoing', private: true }) }}",
+        "options": {}
+      },
+      "id": "f97fcb19-dda1-444b-a5a3-542f97f568d3",
+      "name": "Nota no Chatwoot: pago",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "registrar-venda-curso",
+        "responseMode": "lastNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "cdc2e87f-d545-4832-8413-0d5e3b7ee397",
+      "name": "Registrar venda (outro fluxo)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        260
+      ],
+      "webhookId": "0e3a7a5d-7b9e-4ef1-8caa-61de143c706c"
+    },
+    {
+      "parameters": {
+        "jsCode": "const CHAVE = 'yWlRpqQLl377t9C7_qU'; // chave secreta: a mesma que você cola no painel do gestor (aba Vendas)\n// Registra uma venda enviada por outro fluxo (ex.: o atendimento). Corpo: { chave, nome, email, telefone, forma, valor, ref, convId }\nconst b = $json.body || {};\nif (b.chave !== CHAVE) return [{ json: { ok: false, err: 'chave' } }];\nconst ref = String(b.ref || ('man' + Date.now().toString(36))).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 60);\nconst sd = $getWorkflowStaticData('global');\nsd.vendas = sd.vendas || {};\nsd.vendas[ref] = { ref, nome: String(b.nome || ''), email: String(b.email || ''), telefone: String(b.telefone || '').replace(/[^\\d]/g, ''), forma: /pix/i.test(b.forma || '') ? 'pix' : 'cartao', valor: Number(b.valor) || 0, pagoEm: Date.now(), convId: b.convId || '', src: 'manual' };\nreturn [{ json: { ok: true, ref } }];"
+      },
+      "id": "b59cf893-2215-4bc9-8c5b-2edc6a004d95",
+      "name": "Guardar venda",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "vendas-curso",
+        "responseMode": "lastNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "4caf2ea1-caf4-40bb-84e0-fa94068a78d3",
+      "name": "Gestor consulta vendas",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        520
+      ],
+      "webhookId": "7603d8a9-e431-4ff7-8378-642d65c48e72"
+    },
+    {
+      "parameters": {
+        "jsCode": "const CHAVE = 'yWlRpqQLl377t9C7_qU'; // chave secreta: a mesma que você cola no painel do gestor (aba Vendas)\n// Entrega a lista de vendas pagas ao painel do gestor (só com a chave certa)\nconst q = $json.query || {};\nif (q.chave !== CHAVE) return [{ json: { ok: false, err: 'chave', vendas: [] } }];\nconst sd = $getWorkflowStaticData('global');\nconst v = Object.values(sd.vendas || {}).sort((a, b) => b.pagoEm - a.pagoEm).slice(0, 100);\nreturn [{ json: { ok: true, vendas: v } }];"
+      },
+      "id": "a0db3904-e24b-48b6-a3a8-dc9a70d85e10",
+      "name": "Listar vendas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Pagamentos do curso → painel do gestor\n\n**1.** No código dos nós *Ler pagamento*, *Guardar venda* e *Listar vendas* a CHAVE já está preenchida. Cole a mesma chave no painel do gestor (aba Vendas).\n**2.** Ative o fluxo. As vendas ficam guardadas no próprio n8n (só funcionam com o fluxo ATIVO).\n**3.** Endereços (troque pelo seu n8n):\n- PagBank avisa: POST /webhook/pagbank-curso\n- Painel consulta: GET /webhook/vendas-curso\n- Outro fluxo registra: POST /webhook/registrar-venda-curso\n\nA referência da cobrança deve ser curso-<id da conversa>-<número>. Assim o aviso cai na conversa do Chatwoot.",
+        "height": 330,
+        "width": 520
+      },
+      "id": "d0a3a23a-4dff-4ecb-ae02-fe3377c42efb",
+      "name": "LEIA ANTES",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -420
+      ]
+    }
+  ],
+  "connections": {
+    "PagBank avisa pagamento": {
+      "main": [
+        [
+          {
+            "node": "Ler pagamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler pagamento": {
+      "main": [
+        [
+          {
+            "node": "Veio de uma conversa?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Veio de uma conversa?": {
+      "main": [
+        [
+          {
+            "node": "Nota no Chatwoot: pago",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Registrar venda (outro fluxo)": {
+      "main": [
+        [
+          {
+            "node": "Guardar venda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gestor consulta vendas": {
+      "main": [
+        [
+          {
+            "node": "Listar vendas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

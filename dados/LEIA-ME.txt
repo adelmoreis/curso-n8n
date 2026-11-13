@@ -1,0 +1,4 @@
+Esta pasta guarda os dados do curso (alunos, progresso, pagamentos).
+NUNCA apague. Atualizar o curso nao mexe aqui.
+banco.json = dados atuais | backups/ = copias automaticas.
+Para guardar com seguranca, copie a pasta dados para outro lugar de vez em quando.

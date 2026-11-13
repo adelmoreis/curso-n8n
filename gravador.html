@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gravador de voz - N8N Academia</title>
+<style>
+:root{--bg:#fbf8f5;--card:#fff;--ink:#1d1814;--muted:#6a6058;--line:#e8dfd7;--ac:#f26a1b;--ok:#1f9d55;--red:#d93025}
+@media (prefers-color-scheme:dark){:root{--bg:#14110e;--card:#1d1915;--ink:#f6efe8;--muted:#b2a698;--line:#322b24;--ac:#ff7d33}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 system-ui,Segoe UI,sans-serif}
+.w{max-width:760px;margin:0 auto;padding:20px 16px 90px}
+h1{font-size:26px;margin:8px 0}.tip{color:var(--muted);font-size:15px}
+.bar{position:sticky;top:0;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;z-index:2}
+.bar b{font-size:15px}.prog{flex:1;height:8px;border-radius:9px;background:var(--line);overflow:hidden}.prog i{display:block;height:100%;width:0;background:var(--ok)}
+h2{font-size:15px;color:var(--ac);text-transform:uppercase;letter-spacing:.05em;margin:26px 0 8px}
+.c{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:10px 0}
+.c.rec{border-color:var(--red);box-shadow:0 0 0 2px rgba(217,48,37,.25)}.c.ok{border-color:var(--ok)}
+.n{font-size:13px;color:var(--muted)}.t{font-size:19px;margin:6px 0 12px}
+.r{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button{font:600 16px system-ui;border:0;border-radius:999px;padding:11px 20px;cursor:pointer;background:var(--ac);color:#1a0e05}
+button.s{background:transparent;color:var(--ink);border:1.5px solid var(--line)}button.stop{background:var(--red);color:#fff}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.st{font-size:14px;color:var(--muted)}.st.ok{color:var(--ok)}.st.err{color:var(--red)}audio{height:38px;max-width:100%}
+</style></head><body><div class="w">
+<h1>Gravador de voz</h1>
+<p class="tip">Leia cada frase com calma, como se estivesse explicando para um aluno. Clique em <b>Gravar</b>, leia, clique em <b>Parar</b>. A gravação é salva sozinha na pasta <b>audio</b>. Se errar, é só gravar de novo. Deixe 1 segundo de silêncio antes e depois de falar.</p>
+<div class="bar"><b id="pt">0 de 0</b><div class="prog"><i id="pg"></i></div></div>
+<div id="lista"></div></div>
+<script>
+var ITENS=[{"id": "deg-01", "grupo": "Degustação (aula)", "n": 1, "texto": "Esta é a capa do curso. Todo aluno entra por aqui, com o login que recebe por e-mail e WhatsApp."}, {"id": "deg-02", "grupo": "Degustação (aula)", "n": 2, "texto": "Digite o seu e-mail e a sua senha."}, {"id": "deg-03", "grupo": "Degustação (aula)", "n": 3, "texto": "É só clicar em Entrar."}, {"id": "deg-04", "grupo": "Degustação (aula)", "n": 4, "texto": "Pronto, você está dentro do ambiente, com a cara do n8n. Esta é a tela inicial: aqui ficam os seus workflows, que são os seus fluxos de automação. Para criar um, clique em Create workflow."}, {"id": "deg-05", "grupo": "Degustação (aula)", "n": 5, "texto": "Esta é a tela principal do n8n, onde você monta os seus fluxos. Vamos fazer um tour rápido por ela."}, {"id": "deg-06", "grupo": "Degustação (aula)", "n": 6, "texto": "No topo, à esquerda, fica o nome do workflow. À direita, o Publish coloca o fluxo para rodar de verdade, e o relógio guarda o histórico de versões."}, {"id": "deg-07", "grupo": "Degustação (aula)", "n": 7, "texto": "No centro ficam as abas: Editor, onde você monta o fluxo, Executions, o histórico de execuções, e Evaluations, para testar a qualidade, principalmente de IA."}, {"id": "deg-08", "grupo": "Degustação (aula)", "n": 8, "texto": "Na lateral direita estão os botões para adicionar nodes, buscar e usar outras ferramentas do canvas."}, {"id": "deg-09", "grupo": "Degustação (aula)", "n": 9, "texto": "Embaixo à esquerda ficam os botões de zoom, para você não se perder num fluxo grande. E no rodapé ficam os Logs, onde aparece o resultado de cada execução."}, {"id": "deg-10", "grupo": "Degustação (aula)", "n": 10, "texto": "Agora a missão. Cada missão começa adicionando um node. Clique em Add first step."}, {"id": "deg-11", "grupo": "Degustação (aula)", "n": 11, "texto": "Primeiro node: o Webhook. Ele é o gatilho: recebe dados de fora, como um formulário do seu site, e dá a partida no fluxo. Sem ele, nada começa."}, {"id": "deg-12", "grupo": "Degustação (aula)", "n": 12, "texto": "Segundo node: o Edit Fields. Ele cria ou ajusta campos nos dados, por exemplo guardar o nome de um cliente com o rótulo certo."}, {"id": "deg-13", "grupo": "Degustação (aula)", "n": 13, "texto": "Dê dois cliques no node para abrir as configurações dele. No meio ficam os campos que você preenche, à esquerda os dados que chegam, e à direita o Output, o resultado."}, {"id": "deg-14", "grupo": "Degustação (aula)", "n": 14, "texto": "Atenção: os campos precisam ser preenchidos corretamente. Se ficar vazio ou errado, o simulador circula onde foi o erro e dá a dica."}, {"id": "deg-15", "grupo": "Degustação (aula)", "n": 15, "texto": "Agora sim. No campo Name, escreva valor. Em Value, o dado que a missão pedir, aqui o número 10."}, {"id": "deg-16", "grupo": "Degustação (aula)", "n": 16, "texto": "Clique em Execute step. O resultado aparece na área Output: você vê, em JSON, exatamente o que o node entregou. Schema e Table mostram o mesmo dado de outro jeito."}, {"id": "deg-17", "grupo": "Degustação (aula)", "n": 17, "texto": "Terceiro node: o Respond to Webhook. Ele devolve o resultado para quem chamou o fluxo, fechando o ciclo."}, {"id": "deg-18", "grupo": "Degustação (aula)", "n": 18, "texto": "Hora de testar o fluxo inteiro! Clique em Execute workflow. Cada node fica verde, e o resultado aparece nos Logs. Missão concluída, mais dez pontos de experiência."}, {"id": "deg-19", "grupo": "Degustação (aula)", "n": 19, "texto": "Ficou com dúvida? Abra a apostila. Ela começa no Menu principal, com os Mundos e os capítulos."}, {"id": "deg-20", "grupo": "Degustação (aula)", "n": 20, "texto": "É só clicar no capítulo que você quer ver."}, {"id": "deg-21", "grupo": "Degustação (aula)", "n": 21, "texto": "Passo a passo, com o que digitar em laranja. Use no dia a dia, ao lado do simulador. E ela vem completa para os 100 primeiros alunos."}, {"id": "deg-22", "grupo": "Degustação (aula)", "n": 22, "texto": "Ainda com dúvida? Abra o menu do tutor. Ele analisa a sua tela, tem perguntas prontas e responde a sua dúvida na hora."}, {"id": "deg-23", "grupo": "Degustação (aula)", "n": 23, "texto": "Por exemplo: toque em \"O que é um node?\" e ele explica na hora, sem você sair da aula."}, {"id": "deg-24", "grupo": "Degustação (aula)", "n": 24, "texto": "Esse foi só um gostinho. O curso completo tem quatro Mundos de missões como esta. Garanta a sua vaga!"}, {"id": "apo-01", "grupo": "Tour da apostila", "n": 1, "texto": "Esta é a apostila. Ela abre no Menu principal, com os Mundos e os capítulos de cada um. E vem completa para os 100 primeiros alunos."}, {"id": "apo-02", "grupo": "Tour da apostila", "n": 2, "texto": "Continuar de onde parei leva você direto ao ponto em que parou."}, {"id": "apo-03", "grupo": "Tour da apostila", "n": 3, "texto": "Role a tela e veja tudo: os Mundos 3 e 4 e a Cola e socorro, para quando der erro."}, {"id": "apo-04", "grupo": "Tour da apostila", "n": 4, "texto": "Clique no capítulo que você quer estudar."}, {"id": "apo-05", "grupo": "Tour da apostila", "n": 5, "texto": "Cada capítulo é um passo a passo, e o que você digita aparece em laranja, igual ao que o mentor pede na aula."}, {"id": "apo-06", "grupo": "Tour da apostila", "n": 6, "texto": "O sumário leva você direto a qualquer assunto."}, {"id": "apo-07", "grupo": "Tour da apostila", "n": 7, "texto": "E o tutor está sempre no canto da tela, para tirar dúvidas."}, {"id": "apo-08", "grupo": "Tour da apostila", "n": 8, "texto": "No dia a dia é simples. Antes da aula, leia o capítulo. Durante, deixe a apostila aberta ao lado do simulador. Se travar, use o sumário ou chame o tutor. Depois, revise e pratique no n8n oficial."}, {"id": "apo-09", "grupo": "Tour da apostila", "n": 9, "texto": "E lembre: a apostila completa vem incluída para os 100 primeiros alunos. Garanta a sua vaga!"}];
+var lista=document.getElementById("lista"),feitas={},mr=null,stream=null,atual=null;
+function atualizaProg(){var n=Object.keys(feitas).length;document.getElementById("pt").textContent=n+" de "+ITENS.length+" gravadas";document.getElementById("pg").style.width=(100*n/ITENS.length)+"%";}
+var grupo="";
+ITENS.forEach(function(it){
+  if(it.grupo!==grupo){grupo=it.grupo;var h=document.createElement("h2");h.textContent=grupo;lista.appendChild(h);}
+  var c=document.createElement("div");c.className="c";c.id="c-"+it.id;
+  c.innerHTML='<div class="n">Frase '+it.n+'</div><div class="t"></div><div class="r"><button class="g" type="button">Gravar</button><span class="st"></span></div><div class="p"></div>';
+  c.querySelector(".t").textContent=it.texto;
+  var bt=c.querySelector(".g"),st=c.querySelector(".st"),p=c.querySelector(".p");
+  bt.addEventListener("click",function(){
+    if(mr&&mr.state==="recording"){mr.stop();return;}
+    if(mr)return;
+    navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:true,channelCount:1}}).then(function(s){
+      stream=s;var ch=[];mr=new MediaRecorder(s);atual=c;
+      mr.ondataavailable=function(e){if(e.data.size)ch.push(e.data);};
+      mr.onstop=function(){
+        s.getTracks().forEach(function(t){t.stop();});c.classList.remove("rec");bt.classList.remove("stop");bt.textContent="Regravar";bt.classList.add("s");
+        var blob=new Blob(ch,{type:mr.mimeType||"audio/webm"});mr=null;
+        st.className="st";st.textContent="Salvando...";
+        fetch("/salvar/"+it.id,{method:"POST",body:blob}).then(function(r){if(!r.ok)throw 0;feitas[it.id]=1;c.classList.add("ok");st.className="st ok";st.textContent="Salvo na pasta audio";atualizaProg();
+          p.innerHTML="";var a=document.createElement("audio");a.controls=true;a.src=URL.createObjectURL(blob);p.appendChild(a);
+        }).catch(function(){st.className="st err";st.textContent="Não consegui salvar. Abra pelo GRAVAR_VOZ.bat.";});
+      };
+      mr.start();c.classList.add("rec");bt.textContent="Parar";bt.classList.add("stop");st.className="st";st.textContent="Gravando...";
+    }).catch(function(){st.className="st err";st.textContent="Permita o uso do microfone no navegador.";});
+  });
+  lista.appendChild(c);
+  fetch("/audio/"+it.id+".webm",{method:"HEAD"}).then(function(r){if(r.ok){feitas[it.id]=1;c.classList.add("ok");bt.textContent="Regravar";bt.classList.add("s");st.className="st ok";st.textContent="Já gravada";atualizaProg();}}).catch(function(){});
+});
+atualizaProg();
+</script></body></html>
