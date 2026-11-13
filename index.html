@@ -5653,8 +5653,7 @@ function backToAdmin(){
 function cloudWait(){return !!(window.claude&&window.claude.use&&!CL.ready&&!CL.failed);}
 function splashView(){root.innerHTML='<div class="center"><div class="card"><p class="sub" style="margin:0">Conectando ao seu ambiente...</p></div></div>';mentorEl.classList.add('hidden');}
 function realLoginView(){
-  var free=!CL.cfg||CL.cfg.free!==false;
-  root.innerHTML='<div class="center"><div class="card">'+LOGO()+'<h1>Entrar</h1><p class="sub">Use o usuário e a senha que o seu gestor criou para você. Cada aluno tem o seu próprio ambiente e o seu progresso.</p><form id="f"><div class="field"><label for="lu">Usuário</label><input id="lu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"></div><div class="field"><label for="lp">Senha</label><input id="lp" type="password" autocomplete="current-password"></div><p class="lerr" id="le" role="alert" hidden></p><button class="btn full" type="submit" id="go">Entrar</button></form>'+(free?'<p class="note"><a href="#" id="free" style="color:inherit">Entrar em modo de teste, sem usuário</a>. Nesse modo o progresso fica só neste navegador e seu gestor não vê.</p>':'<p class="note">Esqueceu a senha ou ainda não tem acesso? Fale com o seu gestor.</p>')+'</div></div>';
+  root.innerHTML='<div class="center"><div class="card">'+LOGO()+'<h1>Entrar</h1><p class="sub">Use o usuário e a senha que o seu gestor criou para você. Cada aluno tem o seu próprio ambiente e o seu progresso.</p><form id="f"><div class="field"><label for="lu">Usuário</label><input id="lu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"></div><div class="field"><label for="lp">Senha</label><input id="lp" type="password" autocomplete="current-password"></div><p class="lerr" id="le" role="alert" hidden></p><button class="btn full" type="submit" id="go">Entrar</button></form><p class="note">Esqueceu a senha ou ainda não tem acesso? Fale com o seu gestor.</p></div></div>';
   var er=$('#le'),go=$('#go');
   function fail(t){er.textContent=t;er.hidden=false;go.disabled=false;go.textContent='Entrar';}
   $('#f').addEventListener('submit',function(e){
@@ -5663,7 +5662,6 @@ function realLoginView(){
       fail(x==='nocrypto'?'Este navegador não consegue validar a senha. Tente outro navegador.':x==='empty'?'Escreva o usuário e a senha.':x==='nouser'?'Não encontrei esse usuário. Digite o usuário que o gestor passou (sem espaços), não o nome.':x==='rate'?'Muitas tentativas. Aguarde alguns minutos e tente de novo.':x==='read'?'Não consegui consultar o cadastro agora. Confira a internet e tente de novo.':'Senha incorreta. Confira e tente de novo.');
     });
   });
-  var fr=$('#free');if(fr)fr.addEventListener('click',function(e){e.preventDefault();S.logged=true;save();route();});
   $('#lu').focus();mentorEl.classList.add('hidden');
 }
 function gSyncLogin(id){
