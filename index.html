@@ -813,7 +813,7 @@ body{margin:0}
  A.adminSalt=function(){return api('GET','adminsalt');};
  A.admin=function(e,h){return api('POST','admin',{email:e,h:h}).then(function(j){TOK=j.token;return j;});};
  A.download=function(path,name){return fetch('/api/'+path,{headers:{'X-Token':TOK,'X-Uid':UID},cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('http');return r.blob();}).then(function(b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(a.href);},500);});};
- var ready=(location.protocol==='http:'||location.protocol==='https:')?Promise.race([fetch('/api/ping',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){return !!(j&&j.ok);}),new Promise(function(r){setTimeout(function(){r(false);},2500);})]).catch(function(){return false;}):Promise.resolve(false);
+  var ready=(location.protocol==='http:'||location.protocol==='https:')?Promise.race([fetch('/api/ping',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){return !!(j&&j.ok);}),new Promise(function(r){setTimeout(function(){r(false);},10000);})]).catch(function(){return false;}):Promise.resolve(false);
  window.claude={a3d:A,use:function(n){return ready.then(function(rem){A.remote=!!rem;return n==='db'?(rem?rdb:db):n==='user'?(rem?ruser:user):null;});}};
 })();
 </script>
@@ -5477,17 +5477,20 @@ function blankS(){return {logged:false,name:'',av:-1,mine:0,won:false,tourDone:f
 function blankV(){return {view:'home',tab:'editor',panel:false,trig:false,sel:-1,q:'',ed:null,ed2:null,cur:null,nv:false,wfn:0};}
 function doLogin(user,pw,known){
   var u=uname(user);
-  if(!u||(!pw&&!known))return Promise.reject('empty');
+  var p=pw?String(pw).trim():'';
+  if(!u||(!p&&!known))return Promise.reject('empty');
   var A=window.claude&&window.claude.a3d;
-  if(A&&A.remote){
-    return A.salt(u).then(function(j){if(!j.salt)throw 'nouser';return known?known:pwHash(pw,j.salt);},function(){throw 'read';}).then(function(h){
-      return A.login(u,h).then(function(d){return {u:u,h:h,d:d};},function(e){throw (e&&e.code==='bad')?'bad':(e&&e.code==='nouser')?'nouser':(e&&e.code==='rate')?'rate':'read';});
+  if(location.protocol==='http:'||location.protocol==='https:'||(A&&A.remote)){
+    var saltP=A?A.salt(u):fetch('/api/salt?user='+encodeURIComponent(u),{cache:'no-store'}).then(function(r){return r.json();});
+    return saltP.then(function(j){if(!j||!j.salt)throw 'nouser';return known?known:pwHash(p,j.salt);},function(){throw 'read';}).then(function(h){
+      var logP=A?A.login(u,h):fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:u,h:h}),cache:'no-store'}).then(function(r){if(!r.ok)throw {code:r.status===401?'bad':'read'};return r.json();}).then(function(j){return j.d;});
+      return logP.then(function(d){if(A)A.remote=true;return {u:u,h:h,d:d};},function(e){throw (e&&e.code==='bad')?'bad':(e&&e.code==='nouser')?'nouser':(e&&e.code==='rate')?'rate':'read';});
     });
   }
   return CL.db.doc('logins/'+u).get().catch(function(){throw 'read';}).then(function(sn){
     if(!sn.exists)throw 'nouser';
     var d=sn.data();
-    return (known?Promise.resolve(known):pwHash(pw,d.salt)).then(function(h){if(h!==d.hash)throw 'bad';return {u:u,h:h,d:d};});
+    return (known?Promise.resolve(known):pwHash(p,d.salt)).then(function(h){if(h!==d.hash)throw 'bad';return {u:u,h:h,d:d};});
   });
 }
 function enterSession(r){
@@ -5659,8 +5662,14 @@ function backToAdmin(){
 function cloudWait(){return !!(window.claude&&window.claude.use&&!CL.ready&&!CL.failed);}
 function splashView(){root.innerHTML='<div class="center"><div class="card"><p class="sub" style="margin:0">Conectando ao seu ambiente...</p></div></div>';mentorEl.classList.add('hidden');}
 function realLoginView(){
-  root.innerHTML='<div class="center"><div class="card">'+LOGO()+'<h1>Entrar</h1><p class="sub">Use o usuário e a senha que o seu gestor criou para você. Cada aluno tem o seu próprio ambiente e o seu progresso.</p><form id="f"><div class="field"><label for="lu">Usuário</label><input id="lu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"></div><div class="field"><label for="lp">Senha</label><input id="lp" type="password" autocomplete="current-password"></div><p class="lerr" id="le" role="alert" hidden></p><button class="btn full" type="submit" id="go">Entrar</button></form><p class="note">Esqueceu a senha ou ainda não tem acesso? Fale com o seu gestor.</p></div></div>';
-  var er=$('#le'),go=$('#go');
+  root.innerHTML='<div class="center"><div class="card">'+LOGO()+'<h1>Entrar</h1><p class="sub">Use o usuário e a senha que o seu gestor criou para você. Cada aluno tem o seu próprio ambiente e o seu progresso.</p><form id="f"><div class="field"><label for="lu">Usuário</label><input id="lu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"></div><div class="field"><label for="lp">Senha</label><div style="position:relative;display:flex;align-items:center"><input id="lp" type="password" autocomplete="current-password" style="padding-right:40px;width:100%"><button type="button" id="togglePw" style="position:absolute;right:8px;background:none;border:none;cursor:pointer;font-size:17px;color:#6b7280;padding:4px" aria-label="Mostrar senha" title="Mostrar/ocultar senha">👁️</button></div></div><p class="lerr" id="le" role="alert" hidden></p><button class="btn full" type="submit" id="go">Entrar</button></form><p class="note">Esqueceu a senha ou ainda não tem acesso? Fale com o seu gestor.</p></div></div>';
+  var er=$('#le'),go=$('#go'),lp=$('#lp'),tp=$('#togglePw');
+  if(tp&&lp){
+    tp.addEventListener('click',function(){
+      if(lp.type==='password'){lp.type='text';tp.textContent='🙈';}
+      else{lp.type='password';tp.textContent='👁️';}
+    });
+  }
   function fail(t){er.textContent=t;er.hidden=false;go.disabled=false;go.textContent='Entrar';}
   $('#f').addEventListener('submit',function(e){
     e.preventDefault();er.hidden=true;go.disabled=true;go.textContent='Entrando...';
