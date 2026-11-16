@@ -1245,10 +1245,7 @@ function capaView(){
   mentorEl.classList.add('hidden');gestorPill();
 }
 function loginView(){
-  if(CL.ready&&CL.db&&!CL.admin){realLoginView();return;}
-  root.innerHTML='<div class="center"><div class="card">'+LOGO()+'<h1>Sign in</h1><p class="sub">Entre no ambiente de treino. Aqui você pratica como no n8n de verdade, sem risco de estragar nada.</p><form id="f" novalidate><div class="field"><label for="em">Email</label><input id="em" type="text" inputmode="email" value="aluno@academia.com" autocomplete="off"></div><div class="field"><label for="pw">Password</label><input id="pw" type="password" value="treino1234" autocomplete="off"></div><button class="btn full" type="submit" id="go">Sign in</button></form><p class="note">Esta é a tela de treino do n8n (não é o seu login do curso). Pode clicar em Sign in com o que já está preenchido: qualquer e-mail e senha funcionam aqui.</p></div></div>';
-  $('#f').addEventListener('submit',function(e){e.preventDefault();S.logged=true;save();route();});
-  mentorEl.classList.add('hidden');gestorPill();
+  realLoginView();
 }
 function onboardView(){
   var sel=S.av;
