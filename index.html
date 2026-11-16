@@ -4731,7 +4731,7 @@ function cloudAfter(){
   if(CL.uid&&!CL.admin){
     try{CL.db.doc('students/'+CL.uid).onSnapshot(function(sn){if(CL.sid)return;CL.st=sn.exists?sn.data():null;applyStatus();},function(){});}catch(e){}
   }
-  if(CL.uid)cloudSync(true);
+  if(CL.uid&&S.logged&&CL.sid)cloudSync(true);
   var sess=null;try{sess=JSON.parse(localStorage.getItem(KEY0+'_sess'));}catch(e){}
   cfgP.then(function(){
     if(!CL.admin&&sess&&sess.u&&sess.h&&!S.logged){
@@ -4744,7 +4744,7 @@ function cloudAfter(){
 }
 function errKey(){if(V.view==='m21')return '2.1';if(V.view==='m3'&&V.m3)return V.m3.mis.charAt(0)+'.'+V.m3.mis.charAt(1);if(V.view==='m4'&&V.m4)return V.m4.mis.charAt(0)+'.'+V.m4.mis.charAt(1);if(V.view==='m2'&&V.m2)return V.m2.mis==='23'?'2.3':'2.2';var m=V.cur&&V.cur.mission;return m==='12'?'1.2':m==='13'?'1.3':'1.1';}
 function cloudSync(now){
-  if(!CL.db||!CL.uid||NOSAVE)return;
+  if(!CL.db||!CL.uid||NOSAVE||!S.logged||!CL.sid)return;
   clearTimeout(CL.t);
   CL.t=setTimeout(function(){
     var d={name:S.name||'',av:S.av,xp:S.xp||0,m11:!!S.m11,m12:!!S.m12,m13:!!S.m13,m21:!!S.m21,m22:!!S.m22,m23:!!S.m23,m24:!!S.m24,m31:!!S.m31,m32:!!S.m32,m33:!!S.m33,m41:!!S.m41,m42:!!S.m42,m43:!!S.m43,goal:S.goal||'',sk:(S.skips||[]).length,q1:!!S.q1,q2:!!S.q2,q3:!!S.q3,q4:!!S.q4,cert:!!S.cert,qbest:S.qbest||0,qtries:S.qtries||0,errs:S.errs||{},biz:(S.biz&&S.biz.n)?{n:String(S.biz.n).slice(0,80),t:String(S.biz.t||'').slice(0,120),d:String(S.biz.d||'').slice(0,120),k:String(S.biz.k||'').slice(0,120),c:String(S.biz.c||'').slice(0,120)}:null,last:Date.now(),sid:CL.sid||''};
@@ -4752,7 +4752,6 @@ function cloudSync(now){
     if(sig===CL.sig&&!now)return;
     CL.sig=sig;
     if(CL.sid){try{CL.db.doc('saves/'+CL.sid).set({st:JSON.stringify(S),at:S._at||Date.now(),sum:d}).catch(function(){CL.sig='';});}catch(e){}}
-    else{try{CL.db.doc('progress/'+CL.uid).set(d).catch(function(){CL.sig='';});}catch(e){}}
   },now?200:2000);
 }
 var _m2last=null;
@@ -4812,12 +4811,22 @@ function openGestor(){
 }
 function closeGestor(){var w=document.getElementById('gp');if(w)w.remove();GD.unsub.forEach(function(u){try{u();}catch(e){}});GD.unsub=[];GD.loaded=false;}
 function gRows(){
-  var map={};Object.keys(GD.pr).forEach(function(uid){map[uid]=GD.pr[uid];});Object.keys(GD.sv).forEach(function(sid){map[sid]=GD.sv[sid];});
-  var ids={};Object.keys(map).forEach(function(k){ids[k]=1;});Object.keys(GD.stu).forEach(function(k){ids[k]=1;});
+  var map={};
+  Object.keys(GD.sv).forEach(function(sid){map[sid]=GD.sv[sid];});
+  Object.keys(GD.pr).forEach(function(uid){
+    if(GD.stu[uid] || (GD.pr[uid] && (GD.pr[uid].name || GD.pr[uid].sid))){
+      if(!map[uid]) map[uid]=GD.pr[uid];
+    }
+  });
+  var ids={};
+  Object.keys(GD.stu).forEach(function(k){ids[k]=1;});
+  Object.keys(map).forEach(function(k){if(GD.stu[k] || (map[k] && (map[k].name || map[k].sid))) ids[k]=1;});
   if(CL.admin&&CL.uid)delete ids[CL.uid];
   return Object.keys(ids).map(function(id){
     var p=map[id]||null,s=GD.stu[id]||null;
     return {id:id,p:p,s:s,nick:(p&&p.name)||'',blocked:!!(s&&s.status==='bloqueado'),reg:!!s,last:(p&&p.last)||0,nm:(s&&s.name)||'',contact:(s&&s.contact)||'',manual:!!(s&&s.manual),user:(s&&s.user)||''};
+  }).filter(function(r){
+    return r.reg || (r.p && (r.p.name || r.p.sid));
   }).sort(function(a,b){return (b.last||0)-(a.last||0);});
 }
 function gNm(r,fb){return r.nm?'<span>'+esc(r.nm)+'</span>':'<span data-nm="'+esc(r.id)+'">'+esc(r.nick||fb||'Aluno sem nome')+'</span>';}
@@ -4965,7 +4974,7 @@ function gAlunos(rows){
     if(GD.stu[r.id]&&GD.stu[r.id].perms&&GD.stu[r.id].perms.sk)pill+=' <span class="gp-pill r" title="O aluno pode usar o atalho de conclusão">Atalho liberado</span>';
     if(r.p&&r.p.sk)pill+=' <span class="gp-pill w" title="O gestor concluiu etapas pelo atalho">Atalho: '+r.p.sk+'</span>';
     if(gReady(r))pill+=' <span class="gp-pill r">Pronto para o Mundo 2</span>';
-    var acts=!r.reg?'<button type="button" class="gb pri" data-ga="reg" data-id="'+esc(r.id)+'">Cadastrar</button>':
+    var acts=!r.reg?'<button type="button" class="gb pri" data-ga="reg" data-id="'+esc(r.id)+'">Cadastrar</button><button type="button" class="gb bad" data-ga="delpr" data-id="'+esc(r.id)+'">Remover</button>':
       '<button type="button" class="gb pri" data-ga="rep" data-id="'+esc(r.id)+'">Relatório</button>'+(r.user?'<button type="button" class="gb" data-ga="send" data-id="'+esc(r.id)+'">Enviar acesso</button>':'')+(function(){var on=!!(GD.stu[r.id]&&GD.stu[r.id].perms&&GD.stu[r.id].perms.sk);return '<button type="button" class="gb'+(on?' bad':'')+'" data-ga="sk" data-id="'+esc(r.id)+'" title="Libera ou retira o atalho de conclusão (Alt + Shift + S) só para este aluno">'+(on?'Retirar atalho':'Liberar atalho')+'</button>';})()+(gReady(r)?'<button type="button" class="gb pri" data-ga="rel2" data-id="'+esc(r.id)+'">Liberar Mundo 2</button>':'')+'<button type="button" class="gb" data-ga="perm" data-id="'+esc(r.id)+'">Editar</button><button type="button" class="gb '+(r.blocked?'pri':'bad')+'" data-ga="'+(r.blocked?'unblock':'block')+'" data-id="'+esc(r.id)+'">'+(r.blocked?'Reativar':'Bloquear')+'</button><button type="button" class="gb" data-ga="del" data-id="'+esc(r.id)+'">Remover</button>';
     h+='<tr><td><b>'+gNm(r)+'</b>'+(r.manual?' <em class="gman">cadastro manual</em>':'')+(r.user?' <em class="gman">login: '+esc(r.user)+'</em>':(r.manual?' <em class="gman" style="color:#b42318">sem usuário e senha, clique em Editar</em>':''))+'<small '+(r.nm||r.manual?'':'data-em="'+esc(r.id)+'"')+'>'+esc(r.contact||'')+'</small></td><td>'+pill+'</td><td>'+gProg(r.p)+'</td><td>'+((r.p&&r.p.xp)||0)+'</td><td>'+gErrs(r.p)+'</td><td>'+(r.reg?gPillPay(r):'—')+'</td><td>'+relT(r.last)+'</td><td><div class="gac">'+acts+'</div></td></tr>';
   });
@@ -5416,7 +5425,7 @@ function gAction(a,id){
     else if(a==='block'){res=ref.update({status:'bloqueado',updatedAt:now});if(GD.stu[id]&&GD.stu[id].user)CL.db.doc('logins/'+GD.stu[id].user).update({status:'bloqueado'}).catch(function(){});}
     else if(a==='unblock'){res=ref.update({status:'ativo',updatedAt:now});if(GD.stu[id]&&GD.stu[id].user)CL.db.doc('logins/'+GD.stu[id].user).update({status:'ativo'}).catch(function(){});}
     else if(a==='free'){res=CL.db.doc('config/app').set({free:!(!CL.cfg||CL.cfg.free!==false)}).then(function(){CL.cfg={free:!(!CL.cfg||CL.cfg.free!==false)};gpaint();});}
-    else if(a==='del'){if(!confirmDel(id))return;if(GD.stu[id]&&GD.stu[id].user)CL.db.doc('logins/'+GD.stu[id].user).delete().catch(function(){});res=ref.delete();}
+    else if(a==='del'||a==='delpr'){if(!confirmDel(id))return;if(GD.stu[id]&&GD.stu[id].user)CL.db.doc('logins/'+GD.stu[id].user).delete().catch(function(){});if(GD.pr[id])CL.db.doc('progress/'+id).delete().catch(function(){});if(GD.sv[id])CL.db.doc('saves/'+id).delete().catch(function(){});res=ref.delete();}
     else if(a==='sk'){var s1=GD.stu[id]||{},p1=Object.assign({m1:true,m2:false,m3:false,m4:false},s1.perms||{});p1.sk=!p1.sk;res=ref.update({perms:p1,updatedAt:now});if(s1.user)CL.db.doc('logins/'+s1.user).update({perms:p1}).catch(function(){});GD.msg=(p1.sk?'Atalho liberado para ':'Atalho retirado de ')+(s1.name||'o aluno')+'.'+(p1.sk?' Peça para ele apertar Alt + Shift + S quando precisar. Depois de resolver, volte aqui e retire.':'');}
     else if(a==='perm'){gPerm(id);return;}
     else if(a==='rel2'){var st0=GD.stu[id]||{},np=Object.assign({m1:true,m2:false,m3:false,m4:false},st0.perms||{});np.m2=true;res=ref.update({perms:np,updatedAt:now});if(st0.user)CL.db.doc('logins/'+st0.user).update({perms:np}).catch(function(){});GD.msg='Mundo 2 liberado para '+(st0.name||'o aluno')+'. Ele vê assim que atualizar a tela.';}

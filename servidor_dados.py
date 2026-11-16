@@ -84,6 +84,11 @@ def load_db():
                 except Exception: continue
     if 'config/admin' not in DOCS:
         DOCS['config/admin'] = {'email': DEF_EMAIL, 'salt': DEF_SALT, 'hash': pw_hash(DEF_PASS, DEF_SALT), 'def': True, 'v': 1, 'at': now()}
+    # Limpa automaticamente registros fantasmas de visitantes sem cadastro nem progresso
+    before_len = len(DOCS)
+    DOCS = {k: v for k, v in DOCS.items() if not (k.startswith('progress/') and not v.get('sid') and not v.get('name'))}
+    if len(DOCS) != before_len:
+        print('Limpeza: removidos %d registros fantasmas de visitantes sem cadastro.' % (before_len - len(DOCS)))
     write_db()
     snapshot('inicio')
 
@@ -163,7 +168,8 @@ class H(BaseHTTPRequestHandler):
             if col == 'saves' and sid and did == sid: return True
             return False
         if method == 'PUT':
-            if col in ('progress', 'duvidas') and did and did in (uid, sid): return True
+            if col == 'progress': return bool(sid and did == sid)
+            if col == 'duvidas' and did and did in (uid, sid): return True
             if col == 'saves' and sid and did == sid: return True
         return False
 
