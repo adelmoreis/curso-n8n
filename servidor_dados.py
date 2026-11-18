@@ -256,6 +256,50 @@ class H(BaseHTTPRequestHandler):
                 else: return self.send_json(405, {'err': 'metodo'})
                 write_db()
             return self.send_json(200, {'ok': True})
+        if ep == 'lead' and method == 'POST':
+            if self.limited(): return self.send_json(429, {'err': 'rate'})
+            b = self.body()
+            name = str(b.get('name') or '').strip()
+            phone = str(b.get('phone') or '').strip()
+            email = str(b.get('email') or '').strip()
+            origem = str(b.get('origem') or 'pagina-de-vendas').strip()
+            if not (phone or email):
+                return self.send_json(400, {'err': 'contato_obrigatorio'})
+            clean_phone = re.sub(r'\D', '', phone)
+            lead_id = clean_phone if len(clean_phone) >= 8 else re.sub(r'[^a-zA-Z0-9_-]', '', email)
+            if not lead_id: lead_id = str(int(time.time()))
+            path = 'leads/' + lead_id
+            lead_data = {
+                'id': lead_id,
+                'name': name,
+                'phone': phone,
+                'email': email,
+                'origem': origem,
+                'status': 'novo',
+                'ts': int(time.time()),
+                'created_at': time.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            with LOCK:
+                DOCS[path] = lead_data
+                write_db()
+            webhook_url = os.environ.get('N8N_LEAD_WEBHOOK') or (DOCS.get('config/webhooks') or {}).get('n8n_lead')
+            if webhook_url:
+                try:
+                    import threading, urllib.request
+                    def fwd(url, payload):
+                        try:
+                            req = urllib.request.Request(
+                                url,
+                                data=json.dumps(payload).encode('utf-8'),
+                                headers={'Content-Type': 'application/json', 'User-Agent': 'CursoN8N-LeadNotifier/1.0'}
+                            )
+                            urllib.request.urlopen(req, timeout=5)
+                        except Exception:
+                            pass
+                    threading.Thread(target=fwd, args=(webhook_url, lead_data), daemon=True).start()
+                except Exception:
+                    pass
+            return self.send_json(200, {'ok': True, 'lead': lead_data})
         if not isadmin: return self.send_json(403, {'err': 'negado'})
         if ep == 'col' and method == 'GET':
             name = (q.get('name') or [''])[0]
