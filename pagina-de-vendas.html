@@ -822,9 +822,14 @@ footer{padding-block:32px 96px;color:var(--muted);font-size:14px;display:flex;fl
           <div style="font-size:48px;">🎉</div>
           <h3>Tudo certo! Seu acesso foi liberado com sucesso.</h3>
           <p id="leadSuccessMsg">Enviaremos em instantes o acesso ao Módulo 1 da Apostila Inteligente Interativa e o seu Cupom de 10% OFF para o seu WhatsApp e E-mail.</p>
-          <a id="leadZapDirect" class="btn wa" href="#" target="_blank" rel="noopener">
-            <span>Abrir WhatsApp agora para receber</span>
-          </a>
+          <div style="display:flex; flex-direction:column; gap:10px; width:100%; margin-top:16px;">
+            <a id="leadZapGroup" class="btn wa" href="https://chat.whatsapp.com/CLUu662jFtvL9r2ahPaOJa" target="_blank" rel="noopener" style="background:#25D366; font-weight:700; text-align:center; padding:14px 20px; text-decoration:none; border-radius:10px; color:#fff; display:flex; align-items:center; justify-content:center; gap:8px;">
+              <span>🚀 Entrar no Grupo VIP no WhatsApp</span>
+            </a>
+            <a id="leadZapDirect" class="btn" href="#" target="_blank" rel="noopener" style="text-align:center; font-size:13px; text-decoration:none; color:#555; background:#f3f4f6; border-radius:8px; padding:10px; border:1px solid #e5e7eb;">
+              <span>💬 Falar no WhatsApp pessoal do mentor</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -857,6 +862,7 @@ footer{padding-block:32px 96px;color:var(--muted);font-size:14px;display:flex;fl
 /* ===== CONFIGURE AQUI ===== */
 var CFG = {
   whatsapp: "5574998161911",   // só números, com 55 + DDD (ex.: 5571999998888)
+  whatsappGroup: "https://chat.whatsapp.com/CLUu662jFtvL9r2ahPaOJa", // link do grupo VIP da comunidade
   linkPix:  "https://pag.ae/82kKqTCnM",                // link de checkout Pix (Mercado Pago, Asaas, Kiwify...)
   linkCartao: "https://pag.ae/82kKi4Z2J",              // link de checkout cartão
   chatwootUrl: "https://chatwoot.agente3d.net",             // ex.: https://chatwoot.agente3d.net
@@ -1104,7 +1110,9 @@ var CFG = {
       
       var zapPhone = (window.CFG && window.CFG.whatsapp) || "5574998161911";
       var zapMsg = encodeURIComponent("Olá! Sou " + n + ", me cadastrei na página de vendas do curso n8n e quero receber o acesso ao Módulo 1 da Apostila Inteligente Interativa e meu cupom de 10% OFF!");
-      zapDirect.href = "https://wa.me/" + zapPhone + "?text=" + zapMsg;
+      if(zapDirect) zapDirect.href = "https://wa.me/" + zapPhone + "?text=" + zapMsg;
+      var zapGroup = document.getElementById("leadZapGroup");
+      if(zapGroup && window.CFG && window.CFG.whatsappGroup) zapGroup.href = window.CFG.whatsappGroup;
     });
   });
 
