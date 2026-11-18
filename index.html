@@ -794,18 +794,33 @@ body{margin:0}
    return r.json().catch(function(){return {};}).then(function(j){if(!r.ok){var e=new Error(j.err||('http'+r.status));e.code=j.err||r.status;e.status=r.status;throw e;}return j;});});
  }
  var pollers=[];
+ var _syncChan=null;
+ try{
+   if(typeof BroadcastChannel!=='undefined'){
+     _syncChan=new BroadcastChannel('a3d_sync_bus');
+     _syncChan.onmessage=function(){bump();};
+   }
+   window.addEventListener('storage',function(ev){if(ev.key==='a3d_bus_ping')bump();});
+ }catch(e){}
  function bump(){pollers.slice().forEach(function(f){try{f();}catch(e){}});}
+ function bumpAll(){
+   bump();
+   try{
+     if(_syncChan)_syncChan.postMessage({t:Date.now()});
+     localStorage.setItem('a3d_bus_ping',Date.now());
+   }catch(e){}
+ }
  function rsnap(id,ex,d){return {id:id,exists:!!ex,data:function(){return ex?JSON.parse(JSON.stringify(d)):undefined},metadata:{}};}
  function wr(p){return p;}
  var rdb={doc:function(p){var id=p.split('/').pop(),u='doc?path='+encodeURIComponent(p);return {id:id,path:p,
    get:function(){return api('GET',u).then(function(j){return rsnap(id,j.exists,j.data);});},
-   set:function(d){return api('PUT',u,d).then(function(r){setTimeout(bump,50);return r;});},
-   update:function(d){return api('PATCH',u,d).then(function(r){setTimeout(bump,50);return r;});},
-   delete:function(){return api('DELETE',u).then(function(r){setTimeout(bump,50);return r;});},
+   set:function(d){return api('PUT',u,d).then(function(r){setTimeout(bumpAll,50);return r;});},
+   update:function(d){return api('PATCH',u,d).then(function(r){setTimeout(bumpAll,50);return r;});},
+   delete:function(){return api('DELETE',u).then(function(r){setTimeout(bumpAll,50);return r;});},
    onSnapshot:function(n,er){var last=null,dead=false,f=function(){if(dead)return;api('GET',u).then(function(j){var k=JSON.stringify(j);if(k!==last){last=k;n(rsnap(id,j.exists,j.data));}}).catch(function(e){if(last===null){last='x';if(er)er(e);}});};
-    pollers.push(f);setTimeout(f,0);var t=setInterval(f,3000);return function(){dead=true;clearInterval(t);pollers=pollers.filter(function(x){return x!==f});};}};},
+    pollers.push(f);setTimeout(f,0);var t=setInterval(f,1500);return function(){dead=true;clearInterval(t);pollers=pollers.filter(function(x){return x!==f});};}};},
   collection:function(c){return {onSnapshot:function(n,er){var last=null,dead=false,f=function(){if(dead)return;api('GET','col?name='+encodeURIComponent(c)).then(function(j){var k=JSON.stringify(j);if(k!==last){last=k;var ds=j.docs.map(function(x){return rsnap(x.id,true,x.data);});n({docs:ds,size:ds.length,empty:!ds.length});}}).catch(function(e){if(last===null){last='x';if(er)er(e);}});};
-    pollers.push(f);setTimeout(f,0);var t=setInterval(f,3000);return function(){dead=true;clearInterval(t);pollers=pollers.filter(function(x){return x!==f});};}};}};
+    pollers.push(f);setTimeout(f,0);var t=setInterval(f,1500);return function(){dead=true;clearInterval(t);pollers=pollers.filter(function(x){return x!==f});};}};}};
  var ruser={isOwner:function(){return Promise.resolve(false)},canEdit:function(){return Promise.resolve(false)},id:function(){return Promise.resolve(UID)},profiles:user.profiles,search:user.search};
  A.api=api;A.uid=UID;
  A.salt=function(u){return api('GET','salt?user='+encodeURIComponent(u));};
@@ -4741,7 +4756,14 @@ function cloudAfter(){
   CL.cfg=null;
   var cfgP=CL.db.doc('config/app').get().then(function(sn){CL.cfg=sn.exists?sn.data():null;},function(){});
   if(CL.uid&&!CL.admin){
-    try{CL.db.doc('students/'+CL.uid).onSnapshot(function(sn){if(CL.sid)return;CL.st=sn.exists?sn.data():null;applyStatus();},function(){});}catch(e){}
+    try{CL.db.doc('students/'+(CL.sid||CL.uid)).onSnapshot(function(sn){
+      if(!sn.exists)return;
+      var sd=sn.data();
+      if(sd){
+        CL.st=Object.assign({},CL.st||{},sd);
+        applyStatus();
+      }
+    },function(){});}catch(e){}
   }
   if(CL.uid&&S.logged&&CL.sid)cloudSync(true);
   var sess=null;try{sess=JSON.parse(localStorage.getItem(KEY0+'_sess'));}catch(e){}
@@ -4766,11 +4788,27 @@ function cloudSync(now){
     if(CL.sid){try{CL.db.doc('saves/'+CL.sid).set({st:JSON.stringify(S),at:S._at||Date.now(),sum:d}).catch(function(){CL.sig='';});}catch(e){}}
   },now?200:2000);
 }
-var _m2last=null;
+var _stSigLast=null;
 function applyStatus(){
   var st=CL.st,old=document.getElementById('blk');
   try{skBadge();}catch(e){}
-  var _m=m2perm();if(_m2last!==null&&_m!==_m2last&&V&&V.view==='home'){try{route();}catch(e){}}_m2last=_m;
+  var curSig=JSON.stringify([
+    st?st.status:'',
+    st?st.name:'',
+    m1perm(),
+    m2perm(),
+    m3perm(),
+    m4perm(),
+    skperm()
+  ]);
+  if(_stSigLast!==null&&curSig!==_stSigLast){
+    if(st&&st.name&&S.name!==st.name){
+      S.name=st.name;
+      try{save();}catch(e){}
+    }
+    try{route();}catch(e){}
+  }
+  _stSigLast=curSig;
   var blocked=!CL.admin&&st&&(st.status==='bloqueado'||(st.perms&&st.perms.m1===false));
   if(!blocked){if(old)old.remove();return;}
   if(old)return;
@@ -5520,17 +5558,26 @@ function enterSession(r){
     S=blankS();if(pick)loadS(pick);
     S.logged=true;if(!S.name)S.name=r.d.name||'';
     CL.st=r.d;CL.sig='';
-    if(CL.unL){try{CL.unL();}catch(e){}}
-    try{CL.unL=CL.db.doc('logins/'+r.u).onSnapshot(function(sn){
-      if(!sn.exists){logout();return;}
-      CL.st=sn.data();applyStatus();
-    },function(){});}catch(e){}
+    if(CL.unS){try{CL.unS();}catch(e){}CL.unS=null;}
+    if(CL.sid){
+      try{
+        CL.unS=CL.db.doc('students/'+CL.sid).onSnapshot(function(sn){
+          if(!sn.exists){logout();return;}
+          var sd=sn.data();
+          if(sd){
+            CL.st=Object.assign({},CL.st||{},sd);
+            applyStatus();
+          }
+        },function(){});
+      }catch(e){}
+    }
     V=blankV();save();cloudSync(true);applyStatus();route();
   });
 }
 function logout(){
   TQ.msgs=[];
   try{localStorage.removeItem(KEY0+'_sess');}catch(e){}
+  if(CL.unS){try{CL.unS();}catch(e){}CL.unS=null;}
   if(CL.unL){try{CL.unL();}catch(e){}CL.unL=null;}
   CL.sid=null;CL.login=null;CL.st=null;KEY=KEY0;
   S=blankS();V=blankV();
