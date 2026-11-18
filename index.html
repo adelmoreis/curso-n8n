@@ -4833,7 +4833,7 @@ function relT(ts){
   if(s<90)return 'agora';if(s<3600)return 'há '+Math.round(s/60)+' min';if(s<86400)return 'há '+Math.round(s/3600)+' h';
   var d=Math.round(s/86400);return 'há '+d+(d===1?' dia':' dias');
 }
-var GD={pr:{},sv:{},dv:{},stu:{},pay:{},vnd:{},vPend:[],liberar:'',pcfg:{},tab:'geral',q:'',unsub:[],names:{},loaded:false,msg:''};
+var GD={pr:{},sv:{},dv:{},stu:{},pay:{},vnd:{},leads:{},vPend:[],liberar:'',pcfg:{},tab:'geral',q:'',unsub:[],names:{},loaded:false,msg:''};
 function openGestor(){
   if(!CL.admin||!CL.db)return;
   var old=document.getElementById('gp');if(old){old.remove();}
@@ -4854,6 +4854,7 @@ function openGestor(){
       GD.unsub.push(CL.db.collection('vendas').onSnapshot(function(sn){GD.vnd={};sn.docs.forEach(function(d){GD.vnd[d.id]=d.data();});gpaint();},function(){}));
       GD.unsub.push(CL.db.doc('config/pay').onSnapshot(function(sn){GD.pcfg=sn.exists?sn.data():{};gpaint();},function(){}));
       GD.unsub.push(CL.db.collection('students').onSnapshot(function(sn){GD.stu={};sn.docs.forEach(function(d){GD.stu[d.id]=d.data();});GD.loaded=true;gpaint();},err));
+      GD.unsub.push(CL.db.collection('leads').onSnapshot(function(sn){GD.leads={};sn.docs.forEach(function(d){GD.leads[d.id]=d.data();});gpaint();},function(){}));
     }catch(e){err();}
   }
   setTimeout(function(){if(!GD.loaded&&document.getElementById('gp')){GD.loaded=true;gpaint();}},4000);
@@ -4884,17 +4885,18 @@ function gErrs(p){var n=0;if(p&&p.errs)Object.keys(p.errs).forEach(function(k){n
 function gpaint(){
   var w=document.getElementById('gp');if(!w)return;
   var a0=document.activeElement;if((GD.tab==='cfg'||GD.tab==='add'||GD.tab==='vend')&&a0&&a0.closest&&a0.closest('#gacc,#gsnd,#gcad,#gbk,#gvnd')&&!(a0.tagName==='BUTTON'&&a0.closest('#gvnd')))return;
-  var nd=Object.keys(GD.dv).length;var nv=Object.keys(GD.vnd).filter(function(k){return (GD.vnd[k]||{}).status==='pago';}).length;var tabs=[['geral','Visão geral'],['vend','Vendas'+(nv?' ('+nv+')':'')],['alunos','Alunos'],['metas','Metas'],['rel','Relatórios'],['pag','Pagamentos'],['duv','Dúvidas'+(nd?' ('+nd+')':'')],['add','Adicionar aluno'],['cfg','Configurações']];
+  var nd=Object.keys(GD.dv).length;var nv=Object.keys(GD.vnd).filter(function(k){return (GD.vnd[k]||{}).status==='pago';}).length;var nl=Object.keys(GD.leads||{}).length;var tabs=[['geral','Visão geral'],['leads','Leads'+(nl?' ('+nl+')':'')],['vend','Vendas'+(nv?' ('+nv+')':'')],['alunos','Alunos'],['metas','Metas'],['rel','Relatórios'],['pag','Pagamentos'],['duv','Dúvidas'+(nd?' ('+nd+')':'')],['add','Adicionar aluno'],['cfg','Configurações']];
   var tb=w.querySelector('.gptabs');
   tb.innerHTML=tabs.map(function(t){return '<button type="button" role="tab" data-gt="'+t[0]+'" aria-selected="'+(GD.tab===t[0])+'">'+t[1]+'</button>';}).join('');
   tb.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){GD.tab=b.dataset.gt;GD.msg='';if(GD.tab!=='add')GD.liberar='';gpaint();});});
   var body=w.querySelector('#gpb'),keep=null;
   var act=document.activeElement;if(act&&act.id==='gq'){keep=[act.selectionStart];}
   var rows=gRows();
-  body.innerHTML=(CL.adm&&CL.adm.def&&GD.tab!=='cfg'?'<p class="gpm warn">Você ainda usa a senha padrão do painel. Troque agora, é rápido. <button type="button" class="gb pri" data-ga="gocfg" data-id="x">Trocar a senha</button></p>':'')+(GD.msg?'<p class="gpm warn">'+esc(GD.msg)+'</p>':'')+(GD.tab==='geral'?gGeral(rows):GD.tab==='alunos'?gAlunos(rows):GD.tab==='metas'?gMetas(rows):GD.tab==='rel'?gRelat(rows):GD.tab==='pag'?gPag(rows):GD.tab==='vend'?gVend():GD.tab==='duv'?gDuv():GD.tab==='cfg'?gCfg():gAdd(rows));
+  body.innerHTML=(CL.adm&&CL.adm.def&&GD.tab!=='cfg'?'<p class="gpm warn">Você ainda usa a senha padrão do painel. Troque agora, é rápido. <button type="button" class="gb pri" data-ga="gocfg" data-id="x">Trocar a senha</button></p>':'')+(GD.msg?'<p class="gpm warn">'+esc(GD.msg)+'</p>':'')+(GD.tab==='geral'?gGeral(rows):GD.tab==='leads'?gLeads():GD.tab==='alunos'?gAlunos(rows):GD.tab==='metas'?gMetas(rows):GD.tab==='rel'?gRelat(rows):GD.tab==='pag'?gPag(rows):GD.tab==='vend'?gVend():GD.tab==='duv'?gDuv():GD.tab==='cfg'?gCfg():gAdd(rows));
   if(GD.tab==='alunos'){var q=body.querySelector('#gq');if(q){q.addEventListener('input',function(){GD.q=q.value;gpaint();});if(keep){q.focus();try{q.setSelectionRange(keep[0],keep[0]);}catch(e){}}}}
   if(GD.tab==='add')gAddWire(body);
   if(GD.tab==='pag')gSimWire(body);
+  if(GD.tab==='leads')gLeadsWire(body);
   if(GD.tab==='vend')gVendWire(body);
   if(GD.tab==='cfg'){gBkWire(body);gBkLoad();}
   body.querySelectorAll('[data-ga]').forEach(function(b){b.addEventListener('click',function(){gAction(b.dataset.ga,b.dataset.id);});});
@@ -5102,6 +5104,55 @@ function gCsvPag(){
   rows.forEach(function(r){var pay=gPayOf(r.id);((pay&&pay.hist)||[]).forEach(function(h){out.push([gName(r),gFmtTs(h.at),String(h.amt||0).replace('.',','),h.met||'',h.note||'']);});});
   gCsv('pagamentos-n8n-academia.csv',out);
 }
+/* ---------- Leads capturados na página de vendas ---------- */
+function gLeads(){
+  var all=Object.keys(GD.leads||{}).map(function(k){var o=GD.leads[k]||{};o.id=k;return o;}).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  var zapUrl=function(fone,nome){
+    var clean=(fone||'').replace(/\D/g,'');
+    if(!clean)return '#';
+    if(!clean.startsWith('55')&&clean.length<=11)clean='55'+clean;
+    var msg=encodeURIComponent('Olá '+(nome||'')+'! Vi que você se cadastrou para receber o Módulo 1 da Apostila Inteligente do curso n8n. Aqui está o seu acesso e o cupom de 10% OFF!');
+    return 'https://wa.me/'+clean+'?text='+msg;
+  };
+  var rowsHtml=all.map(function(l){
+    var telClean=(l.phone||'').replace(/\D/g,'');
+    var dt=l.created_at||(l.ts?gFmtTs(l.ts*1000):'-');
+    return '<div class="gli"><span><b>'+esc(l.name||'Sem nome')+'</b> <em>WhatsApp: <b>'+esc(l.phone||'-')+'</b> &middot; E-mail: '+esc(l.email||'-')+'<br><small style="color:#888;">Cadastrado em: '+esc(dt)+' &middot; Origem: '+esc(l.origem||'Página de Vendas')+'</small></em></span>'
+      +'<span style="display:flex;gap:6px;align-items:center;">'
+      +(telClean?'<a class="gb pri" href="'+zapUrl(l.phone,l.name)+'" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;">💬 Chamar no WhatsApp</a>':'')
+      +'<button type="button" class="gb" data-glead-to-student="'+esc(l.id)+'">➕ Tornar Aluno</button>'
+      +'</span></div>';
+  }).join('');
+  return '<div class="gcard"><h3>Leads Capturados na Página de Vendas ('+all.length+')</h3>'
+    +'<p class="gpm">Estes são os visitantes que preencheram o formulário para receber o <b>Módulo 1 da Apostila Inteligente</b> e o cupom de 10% OFF. Clique para conversar com eles no WhatsApp ou torná-los alunos.</p>'
+    +(all.length?rowsHtml:'<p class="gpm info">Nenhum lead capturado ainda. Quando os visitantes preencherem o formulário na página de vendas, eles aparecerão aqui em tempo real.</p>')
+    +(all.length?'<div style="margin-top:10px;"><button type="button" class="gb" id="gdlLeads">📥 Baixar Leads (CSV)</button></div>':'')
+    +'</div>';
+}
+function gLeadsWire(body){
+  body.querySelectorAll('[data-glead-to-student]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var id=btn.dataset.gleadToStudent,l=(GD.leads||{})[id]||{};
+      GD.tab='add';gpaint();
+      setTimeout(function(){
+        var gp=document.getElementById('gp');if(!gp)return;
+        var inName=gp.querySelector('#gna'),inCont=gp.querySelector('#gco');
+        if(inName)inName.value=l.name||'';
+        if(inCont)inCont.value=l.phone||l.email||'';
+      },50);
+    });
+  });
+  var dlBtn=body.querySelector('#gdlLeads');
+  if(dlBtn){
+    dlBtn.addEventListener('click',function(){
+      var all=Object.keys(GD.leads||{}).map(function(k){return GD.leads[k]||{};});
+      var csvData=[['Nome','WhatsApp','Email','Data/Hora','Origem']];
+      all.forEach(function(l){csvData.push([l.name||'',l.phone||'',l.email||'',l.created_at||'',l.origem||'']);});
+      gCsv('leads-curso-n8n-'+gToday().replace(/-/g,'')+'.csv',csvData);
+    });
+  }
+}
+
 /* ---------- Vendas pelo site: pagamentos confirmados e liberação ---------- */
 function gMoneyBR(v){return 'R$ '+(+v||0).toFixed(2).replace('.',',');}
 function gVend(){
