@@ -1578,13 +1578,13 @@ function homeClassic(){
   var cards=SUMARIO.map(function(w){
     var its=w.it.map(function(i){
       var ok=wOpen(w)&&S[i[0]];
-      return '<li class="'+(ok?'ok':'')+'"><span class="hk">'+(ok?'&#10003;':(wOpen(w)?'&bull;':'&#128274;'))+'</span><span class="hn">'+esc(i[1])+'</span><span class="ht">'+esc(i[2])+'</span>'+(wOpen(w)?apLink(i[0]):'')+'</li>';
+      return '<li class="'+(ok?'ok':'')+'"'+(wOpen(w)?' data-mis="'+i[0]+'" style="cursor:pointer" title="Abrir missão"':'')+'><span class="hk">'+(ok?'&#10003;':(wOpen(w)?'&bull;':'&#128274;'))+'</span><span class="hn">'+esc(i[1])+'</span><span class="ht">'+esc(i[2])+'</span>'+(wOpen(w)?apLink(i[0]):'')+'</li>';
     }).join('');
     return '<section class="hw'+(wOpen(w)?'':' soon')+'"><h3><i>'+w.n+'</i>Mundo '+w.n+' &middot; '+esc(w.t)+(wOpen(w)?'':'<small>'+wLabel(w)+'</small>')+'</h3><ul>'+its+'</ul></section>';
   }).join('');
   root.innerHTML='<div class="home"><header class="hh">'+LOGO()+'<div class="hhr"><span class="hxp">'+(S.xp||0)+' XP</span>'+(CL&&CL.admin?'<button type="button" class="hbt pri" id="gbtn">Painel do gestor</button>':'')+'<button type="button" class="hbt" id="hap" title="Abrir a apostila, o material de apoio do curso">Apostila</button><button type="button" class="hbt" id="hvis" title="Trocar o visual da tela principal">Visual: Trilha</button><button type="button" class="hbt" id="hexit">Sair do curso</button></div></header>'+
    '<div class="hhero"><div class="hcopy"><p class="hey">Bem-vindo(a), '+esc(S.name)+'</p><h1>Você vai aprender n8n <em>fazendo</em>.</h1><p class="hp">Em cada missão você monta um workflow de verdade, passo a passo, com o mentor te mostrando onde clicar. Sem risco de estragar nada.</p>'+
-   goalBox()+'<div class="hbtns"><button class="btn big" type="button" id="hgo">'+(done?(m2perm()&&m2Next()?m2Label():(S.q2&&m3Which()?m3Label():(S.q3&&m4Which()?m4Label():(S.q4?'Ver meu certificado':'Rever o curso')))):(any?'Continuar de onde parei':'Começar o curso'))+'</button><button class="btn ghost" type="button" id="hsay">&#9654; Ouvir a apresentação</button>'+(S.cert?'<button class="btn ghost" type="button" id="hcert">Ver meu certificado</button>':'')+'</div></div>'+homeShot()+'</div>'+
+   goalBox()+'<div class="hbtns"><button class="btn big" type="button" id="hgo">'+(done?(m2perm()&&m2Next()?m2Label():((S.q2||m3perm())&&m3Which()?m3Label():((S.q3||m4perm())&&m4Which()?m4Label():(S.q4?'Ver meu certificado':'Rever o curso')))):(any?'Continuar de onde parei':'Começar o curso'))+'</button><button class="btn ghost" type="button" id="hsay">&#9654; Ouvir a apresentação</button>'+(S.cert?'<button class="btn ghost" type="button" id="hcert">Ver meu certificado</button>':'')+'</div></div>'+homeShot()+'</div>'+
    '<h2 class="hsum">O que você vai aprender</h2><div class="hgrid">'+cards+'</div></div>';
   homeWire();
 }
@@ -1595,7 +1595,7 @@ try{var _hv=localStorage.getItem('a3d_hv');if(_hv==='classic'||_hv==='painel')HV
 function setHV(v){HV=v;try{localStorage.setItem('a3d_hv',v);}catch(e){}route();}
 function goCourse(){
   try{speechSynthesis.cancel();}catch(e){}
-  if(S.q1&&m2perm()){var _n=m2Next();if(_n==='21'){m21Init();route();return;}if(_n==='22'||_n==='23'||_n==='24'){m2Init(_n);route();return;}if(_n==='q2'){startWorldQuiz(2);return;}if(!_n&&S.q2){var _n3=m3Which();if(_n3==='31'||_n3==='32'||_n3==='33'){m3Init(_n3);route();return;}if(_n3==='q3'){startWorldQuiz(3);return;}if(!_n3){var _n4=m4Which();if(_n4==='41'||_n4==='42'||_n4==='43'){m4Init(_n4);route();return;}if(_n4==='q4'){startWorldQuiz(4);return;}if(!_n4&&S.cert){certWin();return;}}}}
+  if(S.q1&&m2perm()){var _n=m2Next();if(_n==='21'){m21Init();route();return;}if(_n==='22'||_n==='23'||_n==='24'){m2Init(_n);route();return;}if(_n==='q2'){startWorldQuiz(2);return;}if(!_n&&(S.q2||m3perm())){var _n3=m3Which();if(_n3==='31'||_n3==='32'||_n3==='33'){m3Init(_n3);route();return;}if(_n3==='q3'){startWorldQuiz(3);return;}if(!_n3&&(S.q3||m4perm())){var _n4=m4Which();if(_n4==='41'||_n4==='42'||_n4==='43'){m4Init(_n4);route();return;}if(_n4==='q4'){startWorldQuiz(4);return;}if(!_n4&&S.cert){certWin();return;}}}}
   if(V.trig||V.ed){V.view='editor';route();return;}
   if(S.mine&&S.m11){openMine();return;}
   V.view='list';route();
@@ -1662,6 +1662,18 @@ function homeWire(){
   if(q('gbtn'))q('gbtn').addEventListener('click',openGestor);
   if(q('hvis'))q('hvis').addEventListener('click',function(){setHV(HV==='painel'?'classic':'painel');});
   document.querySelectorAll('[data-q]').forEach(function(b){b.addEventListener('click',function(){startWorldQuiz(+b.dataset.q);});});
+  document.querySelectorAll('[data-mis]').forEach(function(li){
+    li.addEventListener('click',function(e){
+      if(e.target.closest('.hapl'))return;
+      var k=li.dataset.mis;
+      if(k==='m21'){m21Init();route();}
+      else if(k==='m22'||k==='m23'||k==='m24'){m2Init(k==='m24'?'24':k==='m23'?'23':'22');route();}
+      else if(k==='m31'||k==='m32'||k==='m33'){m3Init(k.slice(1));route();}
+      else if(k==='m41'||k==='m42'||k==='m43'){m4Init(k.slice(1));route();}
+      else if(/^q\d/.test(k)){startWorldQuiz(+k.slice(1));}
+      else if(k==='m11'||k==='m12'||k==='m13'){V.view='list';route();}
+    });
+  });
   var qz=q('hquiz1');if(qz)qz.addEventListener('click',startQuiz);
   homeSay(false);
   if(S.logged&&S.av>=0&&(!S.intro||!S.ap))setTimeout(function(){if(GLOGIN||document.querySelector('.win'))return;if(!S.intro)introWin(false);else if(!S.ap)apWin(false);},500);
@@ -1673,8 +1685,11 @@ function levelInfo(xp){
   return {n:i+1,name:cur[1],next:nx?nx[1]:'',pct:nx?Math.round((xp-cur[0])/(nx[0]-cur[0])*100):100,left:nx?nx[0]-xp:0};
 }
 function skperm(){var p=CL&&CL.st&&CL.st.perms;return !!(p&&p.sk);}
+function m1perm(){var p=CL&&CL.st&&CL.st.perms;return p?p.m1!==false:true;}
 function m2perm(){var p=CL&&CL.st&&CL.st.perms;return p?!!p.m2:!!S.m2t;}
-function wOpen(w){return !!w.open||(w.n===2&&m2perm())||(w.n===3&&!!S.q2)||(w.n===4&&!!S.q3);}
+function m3perm(){var p=CL&&CL.st&&CL.st.perms;return p?!!p.m3:false;}
+function m4perm(){var p=CL&&CL.st&&CL.st.perms;return p?!!p.m4:false;}
+function wOpen(w){return (w.n===1&&m1perm())||(w.n===2&&m2perm())||(w.n===3&&(m3perm()||!!S.q2))||(w.n===4&&(m4perm()||!!S.q3));}
 function m4Which(){return !S.m41?'41':!S.m42?'42':!S.m43?'43':!S.q4?'q4':'';}
 function m4Label(){var k=m4Which();return k==='41'?'Começar a Missão 4.1':k==='42'?'Começar a Missão 4.2':k==='43'?'Começar o projeto final':k==='q4'?'Fazer o quiz final':'Rever o curso';}
 function m3Which(){return !S.m31?'31':!S.m32?'32':!S.m33?'33':!S.q3?'q3':'';}
@@ -1692,14 +1707,14 @@ function nextMission(){
   if(m2perm()&&!S.m23)return {k:'2.3',t:'If e Switch',d:'Decida o caminho do pedido: If para sim ou não e Switch para vários caminhos.',go:'course'};
   if(m2perm()&&!S.m24)return {k:'2.4',t:'Projeto do Mundo 2',d:S.goal==='biz'?'Monte o fluxo de um pedido da sua loja: Webhook, CEP e decisão. No fim, você escreve o plano da sua automação.':'Monte o fluxo completo: Webhook, HTTP Request e If, tudo junto.',go:'course'};
   if(m2perm()&&!S.q2)return {k:'Quiz',t:'Quiz do Mundo 2',d:'5 perguntas. Com 4 acertos você conclui o Mundo 2.',go:'quiz2'};
-  if(S.q2&&!S.m31)return {k:'3.1',t:'Erros e alertas',d:'Um pedido chega com o CEP errado. Faça o fluxo avisar a equipe em vez de quebrar.',go:'course'};
-  if(S.q2&&!S.m32)return {k:'3.2',t:'Loop Over Items',d:'A loja manda vários pedidos de uma vez. Trate um por vez, no ritmo certo.',go:'course'};
-  if(S.q2&&!S.m33)return {k:'3.3',t:'Sub-workflows',d:'Guarde a busca de CEP em um workflow separado e chame quando precisar.',go:'course'};
-  if(S.q2&&!S.q3)return {k:'Quiz',t:'Quiz do Mundo 3',d:'5 perguntas. Com 4 acertos você conclui o Mundo 3.',go:'quiz3'};
-  if(S.q3&&!S.m41)return {k:'4.1',t:'Seu primeiro Agente de IA',d:'Monte um agente com chat, cérebro e uma ferramenta: o Buscar CEP que você criou.',go:'course'};
-  if(S.q3&&!S.m42)return {k:'4.2',t:'Memória e saída estruturada',d:'Faça o agente lembrar da conversa e responder em campos fixos.',go:'course'};
-  if(S.q3&&!S.m43)return {k:'4.3',t:'Projeto final',d:'Junte tudo: Webhook, If, AI Agent e Telegram em uma automação completa.',go:'course'};
-  if(S.q3&&!S.q4)return {k:'Quiz',t:'Quiz final',d:'15 perguntas com tudo o que você viu. Com 12 acertos você recebe o certificado.',go:'quiz4'};
+  if((m3perm()||S.q2)&&!S.m31)return {k:'3.1',t:'Erros e alertas',d:'Um pedido chega com o CEP errado. Faça o fluxo avisar a equipe em vez de quebrar.',go:'course'};
+  if((m3perm()||S.q2)&&!S.m32)return {k:'3.2',t:'Loop Over Items',d:'A loja manda vários pedidos de uma vez. Trate um por vez, no ritmo certo.',go:'course'};
+  if((m3perm()||S.q2)&&!S.m33)return {k:'3.3',t:'Sub-workflows',d:'Guarde a busca de CEP em um workflow separado e chame quando precisar.',go:'course'};
+  if((m3perm()||S.q2)&&!S.q3)return {k:'Quiz',t:'Quiz do Mundo 3',d:'5 perguntas. Com 4 acertos você conclui o Mundo 3.',go:'quiz3'};
+  if((m4perm()||S.q3)&&!S.m41)return {k:'4.1',t:'Seu primeiro Agente de IA',d:'Monte um agente com chat, cérebro e uma ferramenta: o Buscar CEP que você criou.',go:'course'};
+  if((m4perm()||S.q3)&&!S.m42)return {k:'4.2',t:'Memória e saída estruturada',d:'Faça o agente lembrar da conversa e responder em campos fixos.',go:'course'};
+  if((m4perm()||S.q3)&&!S.m43)return {k:'4.3',t:'Projeto final',d:'Junte tudo: Webhook, If, AI Agent e Telegram em uma automação completa.',go:'course'};
+  if((m4perm()||S.q3)&&!S.q4)return {k:'Quiz',t:'Quiz final',d:'15 perguntas com tudo o que você viu. Com 12 acertos você recebe o certificado.',go:'quiz4'};
   if(S.q4)return {k:'Fim',t:'Curso concluído',d:'Parabéns! Seu certificado de participação está pronto.',go:'review'};
   return {k:'Aguardando',t:'Mundo 2 aguardando liberação',d:'Você concluiu o Mundo 1! Agora é com o seu mentor: ele vai liberar o Mundo 2 para você. Enquanto isso, refaça o quiz ou reveja as missões.',go:'review'};
 }
@@ -1708,13 +1723,13 @@ function homePainel(){
   var m1=[S.m11,S.m12,S.m13,S.q1].filter(Boolean).length,any=S.m11||S.m12||S.m13||S.q1,done=S.q1,av=AVS[S.av]||AVS[0];
   var stops=SUMARIO.map(function(w,k){
     var st=wOpen(w)?((w.n===1?S.q1:w.n===2?S.q2:w.n===3?S.q3:S.q4)?'done':'cur'):(w.n===2&&S.q1?'wait':'lock');
-    var its=w.it.map(function(i){var ok=wOpen(w)&&S[i[0]];return '<li class="'+(ok?'ok':(wOpen(w)?'todo':'lk'))+'"><span class="zk">'+(ok?'&#10003;':(wOpen(w)?'&bull;':'&#128274;'))+'</span><span class="zn">'+esc(i[1])+'</span><span class="zt">'+esc(i[2])+'</span>'+(wOpen(w)?apLink(i[0]):'')+'</li>';}).join('');
+    var its=w.it.map(function(i){var ok=wOpen(w)&&S[i[0]];return '<li class="'+(ok?'ok':(wOpen(w)?'todo':'lk'))+'"'+(wOpen(w)?' data-mis="'+i[0]+'" style="cursor:pointer" title="Abrir missão"':'')+'><span class="zk">'+(ok?'&#10003;':(wOpen(w)?'&bull;':'&#128274;'))+'</span><span class="zn">'+esc(i[1])+'</span><span class="zt">'+esc(i[2])+'</span>'+(wOpen(w)?apLink(i[0]):'')+'</li>';}).join('');
     var tag=st==='cur'?'<span class="ztag cur">Você está aqui</span>':st==='done'?'<span class="ztag ok">Concluído</span>':st==='wait'?'<span class="ztag cur">Aguardando liberação</span>':'<span class="ztag">em breve</span>';
     return '<div class="zz '+(k%2?'r':'l')+' '+st+'"><div class="zc"><div class="zh"><h3>Mundo '+w.n+' &middot; '+esc(w.t)+'</h3>'+tag+'</div><ul>'+its+'</ul></div><div class="zd"><i>'+(st==='done'?'&#10003;':w.n)+'</i></div><div class="zs"></div></div>';
   }).join('');
   root.innerHTML='<div class="tr"><div class="trb" aria-hidden="true"></div><div class="trw"><header class="trh">'+LOGO()+'<div class="hhr"><span class="hxp">'+xp+' XP</span>'+(CL&&CL.admin?'<button type="button" class="hbt pri" id="gbtn">Painel do gestor</button>':'')+'<button type="button" class="hbt" id="hap" title="Abrir a apostila, o material de apoio do curso">Apostila</button><button type="button" class="hbt" id="hvis" title="Trocar o visual da tela principal">Visual: Clássico</button><button type="button" class="hbt" id="hexit">Sair do curso</button></div></header>'+
    '<section class="trhero"><div class="trc"><p class="hey">Bem-vindo(a), '+esc(S.name)+'</p><h1>Você vai aprender n8n <em>fazendo</em>.</h1><p class="hp">Em cada missão você monta um workflow de verdade, passo a passo, com o mentor te mostrando onde clicar. Sem risco de estragar nada.</p>'+
-   goalBox()+'<div class="hbtns"><button class="btn big" type="button" id="hgo">'+(done?(m2perm()&&m2Next()?m2Label():(S.q2&&m3Which()?m3Label():(S.q3&&m4Which()?m4Label():(S.q4?'Ver meu certificado':'Rever o curso')))):(any?'Continuar de onde parei':'Começar o curso'))+'</button><button class="btn ghost" type="button" id="hsay">&#9654; Ouvir a apresentação</button>'+(S.cert?'<button class="btn ghost" type="button" id="hcert">Ver meu certificado</button>':'')+'</div>'+
+   goalBox()+'<div class="hbtns"><button class="btn big" type="button" id="hgo">'+(done?(m2perm()&&m2Next()?m2Label():((S.q2||m3perm())&&m3Which()?m3Label():((S.q3||m4perm())&&m4Which()?m4Label():(S.q4?'Ver meu certificado':'Rever o curso')))):(any?'Continuar de onde parei':'Começar o curso'))+'</button><button class="btn ghost" type="button" id="hsay">&#9654; Ouvir a apresentação</button>'+(S.cert?'<button class="btn ghost" type="button" id="hcert">Ver meu certificado</button>':'')+'</div>'+
    '<div class="trchips"><span><b>Nível '+L.n+'</b> '+esc(L.name)+'</span><span><b>'+m1+' de 4</b> no Mundo 1</span><span><b>'+esc(nm.k)+'</b> '+esc(nm.t)+'</span></div></div>'+
    '<div class="trv">'+homeShot()+'<div class="trav" title="'+esc(av.n)+'"><svg viewBox="0 0 120 120" aria-hidden="true">'+av.s+'</svg></div><div class="trxp"><b>'+L.pct+'%</b><span>'+(L.next?'rumo a '+esc(L.next):'nível máximo')+'</span><i><u style="width:'+L.pct+'%"></u></i></div></div></section>'+
    '<h2 class="hsum">O que você vai aprender</h2><section class="ztrail">'+stops+'</section></div></div>';
