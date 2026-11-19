@@ -1,0 +1,123 @@
+{
+  "name": "Curso n8n - Entrega Automática de Links via WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "entrega-links-curso",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook Chatwoot",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "entrega-links-curso"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\n\n// 1. Verifica evento e tipo de mensagem\nconst evento = body.event || '';\nconst msgType = body.message_type || '';\nconst content = (body.content || '').toString();\nconst conv = body.conversation || {};\nconst convId = conv.id || body.conversation_id;\nconst sender = body.sender || {};\nconst isPrivate = body.private === true;\n\n// 2. Se for mensagem privada da equipe ou mensagem enviada pelo próprio robô, ignora\nif (isPrivate || msgType === 'outgoing') {\n  return [];\n}\n\n// 3. Verifica se a mensagem contém os termos do Módulo 1 / Apostila\nconst texto = content.toLowerCase();\nconst ehLeadCurso = texto.includes('apostila') || \n                    texto.includes('módulo 1') || \n                    texto.includes('modulo 1') || \n                    texto.includes('curso n8n') ||\n                    texto.includes('cupom');\n\nif (!ehLeadCurso || !convId) {\n  return [];\n}\n\n// 4. Trata nome do cliente\nlet nome = (sender.name || '').toString().trim();\nif (!nome || nome.includes('+') || nome.toLowerCase().includes('visitante')) {\n  nome = 'Amigo(a)';\n}\nconst primeiroNome = nome.split(' ')[0];\n\nreturn {\n  json: {\n    conv_id: convId,\n    nome: primeiroNome,\n    telefone: sender.phone_number || '',\n    link_apostila: 'https://curson8n.agente3d.net',\n    link_grupo_vip: 'https://chat.whatsapp.com/CLUu662jFtvL9r2ahPaOJa',\n    cupom: 'VIP10'\n  }\n};"
+      },
+      "id": "2",
+      "name": "Filtrar Lead e Montar Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot.agente3d.net/api/v1/accounts/1/conversations/{{ $json.conv_id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "cnsoWqY9xnWS9NZbKF2avLWX"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"👋 Olá {{ $json.nome }}! Seja muito bem-vindo(a) à Comunidade n8n da Agente3D! 🚀\\n\\nAqui está o seu acesso liberado ao Módulo 1 da Apostila Inteligente Interativa:\\n👉 {{ $json.link_apostila }}\\n\\n🚀 Entre agora no nosso Grupo VIP exclusivo no WhatsApp:\\n👉 {{ $json.link_grupo_vip }}\\n\\n🎁 Seu cupom exclusivo de 10% OFF para a turma completa é: {{ $json.cupom }}\\n\\nQualquer dúvida ou dificuldade para acessar, pode mandar aqui que eu te ajudo! Vamos construir automações incríveis juntos! 🚀\",\n  \"message_type\": \"outgoing\",\n  \"private\": false\n}",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Entregar Links no WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot.agente3d.net/api/v1/accounts/1/conversations/{{ $('Filtrar Lead e Montar Dados').item.json.conv_id }}/labels",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "cnsoWqY9xnWS9NZbKF2avLWX"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"labels\": [\"lead_modulo1_entregue\"]\n}",
+        "options": {}
+      },
+      "id": "4",
+      "name": "Adicionar Etiqueta no Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Lead e Montar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Lead e Montar Dados": {
+      "main": [
+        [
+          {
+            "node": "Entregar Links no WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entregar Links no WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Adicionar Etiqueta no Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
