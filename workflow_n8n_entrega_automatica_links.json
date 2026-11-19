@@ -1,5 +1,5 @@
 {
-  "name": "Curso n8n - Entrega Automática de Links via WhatsApp",
+  "name": "Curso n8n - Entrega Automática de Links & Follow-up",
   "nodes": [
     {
       "parameters": {
@@ -80,6 +80,45 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "amount": 24,
+        "unit": "hours"
+      },
+      "id": "5",
+      "name": "Aguardar 24 Horas (D+1)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [900, 480]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot.agente3d.net/api/v1/accounts/1/conversations/{{ $('Filtrar Lead e Montar Dados').item.json.conv_id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "cnsoWqY9xnWS9NZbKF2avLWX"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"Oi {{ $('Filtrar Lead e Montar Dados').item.json.nome }}! Tudo bem? Passando para saber se você conseguiu testar a Missão 1.1 da Apostila Inteligente. 💡\\n\\nVocê sabia que mesmo sem saber programar nenhuma linha de código, você consegue colocar seu primeiro fluxo no ar em menos de 10 minutos?\\n\\nSe tiver qualquer dúvida ou quiser garantir sua vaga com os 10% OFF do cupom VIP10 antes de virar o lote, estou por aqui!\",\n  \"message_type\": \"outgoing\",\n  \"private\": false\n}",
+        "options": {}
+      },
+      "id": "6",
+      "name": "Follow-up D+1 (WhatsApp)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 480]
     }
   ],
   "connections": {
@@ -110,6 +149,22 @@
         [
           {
             "node": "Adicionar Etiqueta no Chatwoot",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aguardar 24 Horas (D+1)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aguardar 24 Horas (D+1)": {
+      "main": [
+        [
+          {
+            "node": "Follow-up D+1 (WhatsApp)",
             "type": "main",
             "index": 0
           }
