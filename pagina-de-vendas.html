@@ -820,16 +820,17 @@ footer{padding-block:32px 96px;color:var(--muted);font-size:14px;display:flex;fl
 
         <div id="leadSuccess" class="lead-success-card" hidden>
           <div style="font-size:48px;">🎉</div>
-          <h3>Tudo certo! Seu acesso foi liberado com sucesso.</h3>
-          <p id="leadSuccessMsg">Enviaremos em instantes o acesso ao Módulo 1 da Apostila Inteligente Interativa e o seu Cupom de 10% OFF para o seu WhatsApp e E-mail.</p>
-          <div style="display:flex; flex-direction:column; gap:10px; width:100%; margin-top:16px;">
-            <a id="leadZapGroup" class="btn wa" href="https://chat.whatsapp.com/CLUu662jFtvL9r2ahPaOJa" target="_blank" rel="noopener" style="background:#25D366; font-weight:700; text-align:center; padding:14px 20px; text-decoration:none; border-radius:10px; color:#fff; display:flex; align-items:center; justify-content:center; gap:8px;">
-              <span>🚀 Entrar no Grupo VIP no WhatsApp</span>
+          <h3>Quase lá! Seu acesso foi reservado.</h3>
+          <p id="leadSuccessMsg">Para receber o <b>Módulo 1 da Apostila Inteligente</b> e o seu <b>Cupom de 10% OFF</b> agora mesmo, toque no botão verde abaixo para abrir a conversa no WhatsApp:</p>
+          <div style="display:flex; flex-direction:column; gap:12px; width:100%; margin-top:16px;">
+            <a id="leadZapDirect" class="btn wa" href="#" target="_blank" rel="noopener" style="background:#25D366; font-weight:800; font-size:16px; text-align:center; padding:16px 20px; text-decoration:none; border-radius:12px; color:#fff; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 6px 20px rgba(37,211,102,0.35);">
+              <span>📲 Receber Módulo 1 Grátis no WhatsApp</span>
             </a>
-            <a id="leadZapDirect" class="btn" href="#" target="_blank" rel="noopener" style="text-align:center; font-size:13px; text-decoration:none; color:#555; background:#f3f4f6; border-radius:8px; padding:10px; border:1px solid #e5e7eb;">
-              <span>💬 Falar no WhatsApp pessoal do mentor</span>
+            <a id="leadZapGroup" class="btn" href="https://chat.whatsapp.com/CLUu662jFtvL9r2ahPaOJa" target="_blank" rel="noopener" style="text-align:center; font-size:14px; text-decoration:none; color:#1e293b; background:#f1f5f9; border-radius:10px; padding:12px; border:1px solid #cbd5e1; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px;">
+              <span>🚀 Entrar também no Grupo VIP da Turma</span>
             </a>
           </div>
+          <p style="font-size:12px; color:#64748b; margin-top:12px; text-align:center;">⚡ Envio imediato em 5 segundos após você enviar a mensagem.</p>
         </div>
       </div>
     </div>
@@ -1106,7 +1107,7 @@ var CFG = {
       // 3. Apresentação do sucesso
       form.hidden = true;
       successBox.hidden = false;
-      successMsg.textContent = "Olá " + n + "! Reservamos seu cupom de 10% OFF e o acesso ao Módulo 1 da Apostila Inteligente Interativa. Você receberá o link no WhatsApp e no e-mail informado.";
+      successMsg.textContent = "Olá " + n + "! Reservamos seu cupom de 10% OFF e o acesso ao Módulo 1 da Apostila Inteligente Interativa. Toque no botão verde abaixo para abrir a conversa no WhatsApp e receber o link imediatamente:";
       
       var zapPhone = (window.CFG && window.CFG.whatsapp) || "5574998161911";
       var zapMsg = encodeURIComponent("Olá! Sou " + n + ", me cadastrei na página de vendas do curso n8n e quero receber o acesso ao Módulo 1 da Apostila Inteligente Interativa e meu cupom de 10% OFF!");

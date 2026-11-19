@@ -342,17 +342,8 @@ class H(BaseHTTPRequestHandler):
                                     conv_id = res_conv.get('id')
                                     if conv_id:
                                         url_m = f"{base}/api/v1/accounts/{account_id}/conversations/{conv_id}/messages"
-                                        txt = (
-                                            f"👋 Olá {name}! Seja muito bem-vindo(a) à Comunidade n8n da Agente3D!\n\n"
-                                            f"Se você acabou de garantir seu acesso ao Módulo 1 gratuito da nossa Apostila Inteligente Interativa, parabéns pelo primeiro passo no mundo da automação sem código! 🤖💡\n\n"
-                                            f"📖 Acesse a sua Apostila Interativa por aqui:\n"
-                                            f"👉 https://curson8n.agente3d.net\n\n"
-                                            f"🚀 Entre no Grupo VIP no WhatsApp (Acesso direto):\n"
-                                            f"👉 https://chat.whatsapp.com/CLUu662jFtvL9r2ahPaOJa\n\n"
-                                            f"🎁 Seu cupom exclusivo de 10% OFF para a turma completa é: VIP10\n\n"
-                                            f"Qualquer dúvida ou dificuldade para acessar, manda aqui ou chama o nosso suporte. Vamos construir automações incríveis juntos! 🚀"
-                                        )
-                                        req_m = urllib.request.Request(url_m, data=json.dumps({'content': txt, 'message_type': 'outgoing', 'private': False}).encode('utf-8'), headers={'api_access_token': token, 'Content-Type': 'application/json'})
+                                        txt = f"📥 *Novo Lead Pré-Cadastrado no Site!*\n\n👤 Nome: {name}\n📱 WhatsApp: {formatted}\n📧 E-mail: {email}\n🎁 Cupom: VIP10\n\n_Aguardando o lead enviar a mensagem no WhatsApp para resposta automática imediata._"
+                                        req_m = urllib.request.Request(url_m, data=json.dumps({'content': txt, 'message_type': 'outgoing', 'private': True}).encode('utf-8'), headers={'api_access_token': token, 'Content-Type': 'application/json'})
                                         urllib.request.urlopen(req_m, timeout=6)
                             except Exception:
                                 pass
