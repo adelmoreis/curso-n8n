@@ -282,7 +282,7 @@ class H(BaseHTTPRequestHandler):
             with LOCK:
                 DOCS[path] = lead_data
                 write_db()
-            webhook_url = os.environ.get('N8N_LEAD_WEBHOOK') or (DOCS.get('config/webhooks') or {}).get('n8n_lead')
+            webhook_url = os.environ.get('N8N_LEAD_WEBHOOK') or (DOCS.get('config/webhooks') or {}).get('n8n_lead') or 'https://n8nai.agente3d.net/webhook/lead-capturado'
             if webhook_url:
                 try:
                     import threading, urllib.request
