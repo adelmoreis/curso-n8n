@@ -1,0 +1,255 @@
+{
+  "name": "Curso n8n - Captura de Lead & Chatwoot & Grupo VIP",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-capturado",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook: Novo Lead do Site",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "curso-n8n-lead-capturado"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "nome",
+              "value": "={{ $json.body.name || 'Amigo(a)' }}"
+            },
+            {
+              "name": "telefone_bruto",
+              "value": "={{ $json.body.phone || '' }}"
+            },
+            {
+              "name": "telefone_limpo",
+              "value": "={{ ($json.body.phone || '').replace(/\\D/g, '').length <= 11 && !($json.body.phone || '').replace(/\\D/g, '').startsWith('55') ? '55' + ($json.body.phone || '').replace(/\\D/g, '') : ($json.body.phone || '').replace(/\\D/g, '') }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.body.email || '' }}"
+            },
+            {
+              "name": "link_grupo_vip",
+              "value": "https://chat.whatsapp.com/CLUu662jFtvL9r2ahPaOJa"
+            },
+            {
+              "name": "link_apostila",
+              "value": "https://curson8n.agente3d.net"
+            },
+            {
+              "name": "cupom",
+              "value": "VIP10"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2",
+      "name": "Tratar Dados do Lead",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatwoot.agente3d.net/api/v1/accounts/1/contacts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "cnsoWqY9xnWS9NZbKF2avLWX"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"name\": \"{{ $json.nome }}\",\n  \"email\": \"{{ $json.email }}\",\n  \"phone_number\": \"+{{ $json.telefone_limpo }}\",\n  \"custom_attributes\": {\n    \"origem\": \"pagina_de_vendas_modulo1\",\n    \"cupom_enviado\": \"{{ $json.cupom }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Criar Contato no Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatwoot.agente3d.net/api/v1/accounts/1/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "cnsoWqY9xnWS9NZbKF2avLWX"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"source_id\": \"{{ $('Tratar Dados do Lead').item.json.telefone_limpo }}\",\n  \"inbox_id\": 19,\n  \"contact_id\": {{ $json.payload.contact.id }},\n  \"status\": \"open\"\n}",
+        "options": {}
+      },
+      "id": "4",
+      "name": "Abrir Conversa no Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot.agente3d.net/api/v1/accounts/1/conversations/{{ $json.id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "cnsoWqY9xnWS9NZbKF2avLWX"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"Olá {{ $('Tratar Dados do Lead').item.json.nome }}! Parabéns pelo interesse em dominar automações no n8n. 🚀\\n\\nAqui está o que preparamos para você:\\n\\n📖 Acesso gratuito ao Módulo 1 da Apostila Inteligente Interativa:\\n👉 {{ $('Tratar Dados do Lead').item.json.link_apostila }}\\n\\n👥 Entre na nossa Comunidade VIP exclusiva no WhatsApp:\\n👉 {{ $('Tratar Dados do Lead').item.json.link_grupo_vip }}\\n\\n🎁 Seu cupom especial de 10% OFF para a turma completa:\\n👉 Código: {{ $('Tratar Dados do Lead').item.json.cupom }}\\n\\nQualquer dúvida é só responder aqui!\",\n  \"message_type\": \"outgoing\",\n  \"private\": false\n}",
+        "options": {}
+      },
+      "id": "5",
+      "name": "Enviar Mensagem WhatsApp de Boas-Vindas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "amount": 24,
+        "unit": "hours"
+      },
+      "id": "6",
+      "name": "Aguardar 24 Horas (D+1)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1120, 480]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chatwoot.agente3d.net/api/v1/accounts/1/conversations/{{ $('Abrir Conversa no Chatwoot').item.json.id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "cnsoWqY9xnWS9NZbKF2avLWX"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"Oi {{ $('Tratar Dados do Lead').item.json.nome }}! Tudo bem? Passando para saber se conseguiu testar a Missão 1.1 da Apostila Inteligente. 💡\\n\\nVocê sabia que mesmo sem saber programar nenhuma linha de código, você consegue colocar seu primeiro fluxo no ar em menos de 10 minutos?\\n\\nSe tiver qualquer dúvida ou quiser garantir sua vaga com 10% OFF antes de virar o lote, estou por aqui!\",\n  \"message_type\": \"outgoing\",\n  \"private\": false\n}",
+        "options": {}
+      },
+      "id": "7",
+      "name": "Follow-up D+1 (WhatsApp)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 480]
+    }
+  ],
+  "connections": {
+    "Webhook: Novo Lead do Site": {
+      "main": [
+        [
+          {
+            "node": "Tratar Dados do Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tratar Dados do Lead": {
+      "main": [
+        [
+          {
+            "node": "Criar Contato no Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Contato no Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Abrir Conversa no Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Abrir Conversa no Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Enviar Mensagem WhatsApp de Boas-Vindas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Mensagem WhatsApp de Boas-Vindas": {
+      "main": [
+        [
+          {
+            "node": "Aguardar 24 Horas (D+1)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aguardar 24 Horas (D+1)": {
+      "main": [
+        [
+          {
+            "node": "Follow-up D+1 (WhatsApp)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

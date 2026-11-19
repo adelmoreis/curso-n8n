@@ -283,22 +283,78 @@ class H(BaseHTTPRequestHandler):
                 DOCS[path] = lead_data
                 write_db()
             webhook_url = os.environ.get('N8N_LEAD_WEBHOOK') or (DOCS.get('config/webhooks') or {}).get('n8n_lead') or 'https://n8nai.agente3d.net/webhook/lead-capturado'
-            if webhook_url:
-                try:
-                    import threading, urllib.request
-                    def fwd(url, payload):
-                        try:
-                            req = urllib.request.Request(
-                                url,
-                                data=json.dumps(payload).encode('utf-8'),
-                                headers={'Content-Type': 'application/json', 'User-Agent': 'CursoN8N-LeadNotifier/1.0'}
-                            )
-                            urllib.request.urlopen(req, timeout=5)
-                        except Exception:
-                            pass
+            try:
+                import threading, urllib.request, urllib.parse
+                def fwd(url, payload):
+                    try:
+                        req = urllib.request.Request(
+                            url,
+                            data=json.dumps(payload).encode('utf-8'),
+                            headers={'Content-Type': 'application/json', 'User-Agent': 'CursoN8N-LeadNotifier/1.0'}
+                        )
+                        urllib.request.urlopen(req, timeout=6)
+                    except Exception:
+                        pass
+                def sync_chatwoot(lead):
+                    try:
+                        token = 'cnsoWqY9xnWS9NZbKF2avLWX'
+                        account_id = 1
+                        inbox_id = 19
+                        base = 'https://chatwoot.agente3d.net'
+                        name = lead.get('name') or 'Visitante'
+                        phone = lead.get('phone') or ''
+                        email = lead.get('email') or ''
+                        digits = re.sub(r'\D', '', phone)
+                        if len(digits) <= 11 and not digits.startswith('55'):
+                            digits = '55' + digits
+                        formatted = '+' + digits if digits else ''
+
+                        contact_id = None
+                        if digits:
+                            url_s = f"{base}/api/v1/accounts/{account_id}/contacts/search?q={urllib.parse.quote(digits)}"
+                            req_s = urllib.request.Request(url_s, headers={'api_access_token': token})
+                            try:
+                                with urllib.request.urlopen(req_s, timeout=6) as r:
+                                    res = json.loads(r.read().decode())
+                                    if res.get('payload'):
+                                        contact_id = res['payload'][0]['id']
+                            except Exception:
+                                pass
+
+                        if not contact_id:
+                            url_c = f"{base}/api/v1/accounts/{account_id}/contacts"
+                            body_c = {'name': name, 'email': email, 'phone_number': formatted, 'custom_attributes': {'origem': 'pagina_de_vendas_modulo1', 'cupom': 'VIP10'}}
+                            req_c = urllib.request.Request(url_c, data=json.dumps(body_c).encode('utf-8'), headers={'api_access_token': token, 'Content-Type': 'application/json'})
+                            try:
+                                with urllib.request.urlopen(req_c, timeout=6) as r:
+                                    res = json.loads(r.read().decode())
+                                    contact_id = res['payload']['contact']['id']
+                            except Exception:
+                                pass
+
+                        if contact_id:
+                            url_conv = f"{base}/api/v1/accounts/{account_id}/conversations"
+                            body_conv = {'inbox_id': inbox_id, 'contact_id': contact_id, 'status': 'open'}
+                            req_conv = urllib.request.Request(url_conv, data=json.dumps(body_conv).encode('utf-8'), headers={'api_access_token': token, 'Content-Type': 'application/json'})
+                            try:
+                                with urllib.request.urlopen(req_conv, timeout=6) as r:
+                                    res_conv = json.loads(r.read().decode())
+                                    conv_id = res_conv.get('id')
+                                    if conv_id:
+                                        url_m = f"{base}/api/v1/accounts/{account_id}/conversations/{conv_id}/messages"
+                                        txt = f"🎉 *Novo Lead Capturado no Site!*\n\n👤 Nome: {name}\n📱 WhatsApp: {formatted}\n📧 E-mail: {email}\n🎁 Cupom: VIP10\n🚀 Grupo VIP: https://chat.whatsapp.com/CLUu662jFtvL9r2ahPaOJa\n\n📖 *Apostila Inteligente:*\nhttps://curson8n.agente3d.net"
+                                        req_m = urllib.request.Request(url_m, data=json.dumps({'content': txt, 'message_type': 'outgoing', 'private': False}).encode('utf-8'), headers={'api_access_token': token, 'Content-Type': 'application/json'})
+                                        urllib.request.urlopen(req_m, timeout=6)
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+
+                if webhook_url:
                     threading.Thread(target=fwd, args=(webhook_url, lead_data), daemon=True).start()
-                except Exception:
-                    pass
+                threading.Thread(target=sync_chatwoot, args=(lead_data,), daemon=True).start()
+            except Exception:
+                pass
             return self.send_json(200, {'ok': True, 'lead': lead_data})
         if not isadmin: return self.send_json(403, {'err': 'negado'})
         if ep == 'col' and method == 'GET':
