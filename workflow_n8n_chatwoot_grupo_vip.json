@@ -132,7 +132,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"content\": \"Olá {{ $('Tratar Dados do Lead').item.json.nome }}! Parabéns pelo interesse em dominar automações no n8n. 🚀\\n\\nAqui está o que preparamos para você:\\n\\n📖 Acesso gratuito ao Módulo 1 da Apostila Inteligente Interativa:\\n👉 {{ $('Tratar Dados do Lead').item.json.link_apostila }}\\n\\n👥 Entre na nossa Comunidade VIP exclusiva no WhatsApp:\\n👉 {{ $('Tratar Dados do Lead').item.json.link_grupo_vip }}\\n\\n🎁 Seu cupom especial de 10% OFF para a turma completa:\\n👉 Código: {{ $('Tratar Dados do Lead').item.json.cupom }}\\n\\nQualquer dúvida é só responder aqui!\",\n  \"message_type\": \"outgoing\",\n  \"private\": false\n}",
+        "jsonBody": "={\n  \"content\": \"👋 Olá {{ $('Tratar Dados do Lead').item.json.nome }}! Seja muito bem-vindo(a) à Comunidade n8n da Agente3D!\\n\\nSe você acabou de garantir seu acesso ao Módulo 1 gratuito da nossa Apostila Inteligente Interativa, parabéns pelo primeiro passo no mundo da automação sem código! 🤖💡\\n\\n📖 Acesse a sua Apostila Interativa por aqui:\\n👉 {{ $('Tratar Dados do Lead').item.json.link_apostila }}\\n\\n🚀 Entre no Grupo VIP no WhatsApp (Acesso direto):\\n👉 {{ $('Tratar Dados do Lead').item.json.link_grupo_vip }}\\n\\n🎁 Seu cupom exclusivo de 10% OFF para a turma completa é: {{ $('Tratar Dados do Lead').item.json.cupom }}\\n\\nQualquer dúvida ou dificuldade para acessar, manda aqui ou chama o nosso suporte. Vamos construir automações incríveis juntos! 🚀\",\n  \"message_type\": \"outgoing\",\n  \"private\": false\n}",
         "options": {}
       },
       "id": "5",
