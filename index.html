@@ -5111,7 +5111,7 @@ function gLeads(){
     var clean=(fone||'').replace(/\D/g,'');
     if(!clean)return '#';
     if(!clean.startsWith('55')&&clean.length<=11)clean='55'+clean;
-    var msg=encodeURIComponent('Olá '+(nome||'')+'! Vi que você se cadastrou para receber o Módulo 1 da Apostila Inteligente do curso n8n.\n\n📖 Seu acesso à apostila interativa:\nhttps://curson8n.agente3d.net\n\n🚀 Entre também na nossa Comunidade VIP no WhatsApp:\nhttps://chat.whatsapp.com/CLUu662jFtvL9r2ahPaOJa\n\n🎁 Seu cupom exclusivo de 10% OFF para a turma completa é: VIP10\n\nQualquer dúvida estou por aqui!');
+    var msg=encodeURIComponent('Olá '+(nome||'')+'! Vi que você se cadastrou para receber o Módulo 1 da Apostila Inteligente do curso n8n.\n\n🚀 Entre na nossa Comunidade VIP exclusiva no WhatsApp para receber o material e tirar suas dúvidas:\nhttps://chat.whatsapp.com/CLUu662jFtvL9r2ahPaOJa\n\n🎁 Seu cupom exclusivo de 10% OFF para a turma completa é: VIP10\n\nQualquer dúvida estou por aqui!');
     return 'https://wa.me/'+clean+'?text='+msg;
   };
   var rowsHtml=all.map(function(l){

@@ -44,7 +44,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"content\": \"👋 Olá {{ $json.nome }}! Seja muito bem-vindo(a) à Comunidade n8n da Agente3D! 🚀\\n\\nAqui está o seu acesso liberado ao Módulo 1 da Apostila Inteligente Interativa:\\n👉 {{ $json.link_apostila }}\\n\\n🚀 Entre agora no nosso Grupo VIP exclusivo no WhatsApp:\\n👉 {{ $json.link_grupo_vip }}\\n\\n🎁 Seu cupom exclusivo de 10% OFF para a turma completa é: {{ $json.cupom }}\\n\\nQualquer dúvida ou dificuldade para acessar, pode mandar aqui que eu te ajudo! Vamos construir automações incríveis juntos! 🚀\",\n  \"message_type\": \"outgoing\",\n  \"private\": false\n}",
+        "jsonBody": "={\n  \"content\": \"👋 Olá {{ $json.nome }}! Seja muito bem-vindo(a) à Comunidade n8n da Agente3D! 🚀\\n\\nPara receber o Módulo 1 da sua Apostila Inteligente e tirar dúvidas direto com a nossa equipe, entre agora no nosso Grupo VIP exclusivo no WhatsApp:\\n👉 {{ $json.link_grupo_vip }}\\n\\n🎁 Seu cupom exclusivo de 10% OFF para a turma completa é: {{ $json.cupom }}\\n\\nTe vejo lá dentro do grupo! Qualquer dúvida, pode mandar por aqui! 🚀\",\n  \"message_type\": \"outgoing\",\n  \"private\": false\n}",
         "options": {}
       },
       "id": "3",
